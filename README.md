@@ -15,6 +15,8 @@ Desktop notifications for [OpenCode](https://opencode.ai) that stay quiet when a
 
 Uses `notify-send` (libnotify). Linux only for now.
 
+The package ships TypeScript. OpenCode loads it with Bun; there is no `dist/` build.
+
 ## Install
 
 Add the plugin to `~/.config/opencode/opencode.json` or `opencode.jsonc`:
