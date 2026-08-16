@@ -16,6 +16,10 @@ function send(title: string, body: string, urgency = "normal"): number | undefin
   }
 }
 
+function isAbortedError(error: { name?: string; data?: { name?: string } } | undefined) {
+  return error?.name === "MessageAbortedError" || error?.data?.name === "MessageAbortedError"
+}
+
 function closeNotification(id: number) {
   const attempts: Array<[string, string[]]> = [
     [
@@ -126,7 +130,10 @@ export const OpencodeSmartNotify: Plugin = async ({ project, directory }) => {
       }
 
       if (event.type === "session.error") {
-        const props = event.properties as { error?: { data?: { message?: string } } }
+        const props = event.properties as {
+          error?: { name?: string; data?: { message?: string; name?: string } }
+        }
+        if (isAbortedError(props.error)) return
         const message = props.error?.data?.message ?? "An error occurred"
         send("opencode error", `${projectName}: ${message}`.slice(0, 240), "critical")
         return

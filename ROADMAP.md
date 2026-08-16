@@ -8,7 +8,7 @@ The settle window is the product. Make it correct before adding surface area.
 
 - [x] Track replied IDs, not only pending timers, so a `permission.replied` that arrives before `permission.asked` / `permission.updated` still suppresses the popup
 - [x] Retract a request notification that is already on screen when `permission.replied` fires (replace-id / CloseNotification — not just cancel the timer)
-- [ ] Ignore `MessageAbortedError` (ESC / user cancel) instead of treating it as `opencode error`
+- [x] Ignore `MessageAbortedError` (ESC / user cancel) instead of treating it as `opencode error`
 - [ ] Bound or expire the `asked` set so long sessions do not leak memory
 - [ ] Deduplicate v1 `permission.updated` and v2 `permission.asked` when both fire for the same request
 - [ ] Make `SETTLE_MS` a named, documented constant (config comes in phase 3)
