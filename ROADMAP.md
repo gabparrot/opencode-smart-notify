@@ -11,7 +11,7 @@ The settle window is the product. Make it correct before adding surface area.
 - [x] Ignore `MessageAbortedError` (ESC / user cancel) instead of treating it as `opencode error`
 - [x] Bound or expire the `asked` set so long sessions do not leak memory
 - [x] Deduplicate v1 `permission.updated` and v2 `permission.asked` when both fire for the same request
-- [ ] Make `SETTLE_MS` a named, documented constant (config comes in phase 3)
+- [x] Make `SETTLE_MS` a named, documented constant (config comes in phase 3)
 
 ## 2. Make the repo a real package
 

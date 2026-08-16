@@ -1,7 +1,7 @@
 import type { Plugin } from "@opencode-ai/plugin"
 import { spawnSync } from "node:child_process"
 
-const SETTLE_MS = 250
+export const SETTLE_MS = 250
 const MAX_TRACKED = 256
 
 function createTracked<T>() {
