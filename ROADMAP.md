@@ -21,7 +21,7 @@ Needed before tests, npm, or a public GitHub page.
 - [x] Fill `package.json`: `repository`, `bugs`, `homepage`, `engines`, `exports`
 - [x] Decide the publish shape: ship TypeScript (OpenCode/Bun) or a built `dist/` — pick one and set `main` / `opencode.entry` accordingly
 - [x] Add npm install instructions to the README (`"plugin": ["opencode-smart-notify"]`)
-- [ ] Initial commit
+- [x] Initial commit
 
 ## 3. Config
 
