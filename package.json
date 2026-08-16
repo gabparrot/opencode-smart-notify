@@ -5,7 +5,21 @@
   "type": "module",
   "license": "MIT",
   "author": "Gabriel Parrot",
+  "homepage": "https://github.com/gabparrot/opencode-smart-notify",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gabparrot/opencode-smart-notify.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gabparrot/opencode-smart-notify/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "files": [
     "src",
     "LICENSE",
