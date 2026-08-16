@@ -20,7 +20,7 @@ Needed before tests, npm, or a public GitHub page.
 - [x] Add `tsconfig.json` and `@opencode-ai/plugin` as a devDependency so the plugin typechecks
 - [x] Fill `package.json`: `repository`, `bugs`, `homepage`, `engines`, `exports`
 - [x] Decide the publish shape: ship TypeScript (OpenCode/Bun) or a built `dist/` — pick one and set `main` / `opencode.entry` accordingly
-- [ ] Add npm install instructions to the README (`"plugin": ["opencode-smart-notify"]`)
+- [x] Add npm install instructions to the README (`"plugin": ["opencode-smart-notify"]`)
 - [ ] Initial commit
 
 ## 3. Config
