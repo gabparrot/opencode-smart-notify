@@ -23,6 +23,40 @@ describe("parseOptions", () => {
     expect(parseOptions({ settleMs: Number.POSITIVE_INFINITY })).toEqual({})
     expect(parseOptions({ settleMs: "250" })).toEqual({})
   })
+
+  test("accepts boolean notify flags", () => {
+    expect(
+      parseOptions({
+        notifyRequests: false,
+        notifyQuestions: false,
+        notifyErrors: false,
+        notifyIdle: false,
+      }),
+    ).toEqual({
+      notifyRequests: false,
+      notifyQuestions: false,
+      notifyErrors: false,
+      notifyIdle: false,
+    })
+  })
+
+  test("ignores invalid notify flags and urgency", () => {
+    expect(
+      parseOptions({
+        notifyRequests: "yes",
+        notifyQuestions: 1,
+        notifyErrors: null,
+        notifyIdle: "false",
+        urgency: "urgent",
+      }),
+    ).toEqual({})
+  })
+
+  test("accepts a known urgency", () => {
+    expect(parseOptions({ urgency: "low" })).toEqual({ urgency: "low" })
+    expect(parseOptions({ urgency: "normal" })).toEqual({ urgency: "normal" })
+    expect(parseOptions({ urgency: "critical" })).toEqual({ urgency: "critical" })
+  })
 })
 
 describe("loadFileConfig", () => {
@@ -57,6 +91,13 @@ describe("resolveProjectName", () => {
 describe("defaults", () => {
   test("uses the documented SETTLE_MS constant", () => {
     expect(SETTLE_MS).toBe(250)
-    expect(defaults).toEqual({ settleMs: 250 })
+    expect(defaults).toEqual({
+      settleMs: 250,
+      notifyRequests: true,
+      notifyQuestions: true,
+      notifyErrors: true,
+      notifyIdle: true,
+      urgency: "critical",
+    })
   })
 })

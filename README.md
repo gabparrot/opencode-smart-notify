@@ -58,15 +58,22 @@ Optional `~/.config/opencode/opencode-smart-notify.json`:
 
 ```json
 {
-  "settleMs": 250
+  "settleMs": 250,
+  "notifyRequests": true,
+  "notifyQuestions": true,
+  "notifyErrors": true,
+  "notifyIdle": true,
+  "urgency": "critical"
 }
 ```
+
+`urgency` is `low`, `normal`, or `critical`. `notifyIdle` is reserved for session-idle notifications.
 
 Or pass options in `opencode.json` (these override the file):
 
 ```jsonc
 {
-  "plugin": [["opencode-smart-notify", { "settleMs": 250 }]]
+  "plugin": [["opencode-smart-notify", { "settleMs": 250, "notifyErrors": false }]]
 }
 ```
 

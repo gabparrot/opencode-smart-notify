@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test"
+import { defaults, type Options } from "../src/config"
 import { createEngine, isAbortedError, requestIds } from "../src/engine"
 
 type Sent = { title: string; body: string; urgency?: string }
@@ -27,14 +28,14 @@ function createClock() {
   }
 }
 
-function setup(settleMs = 250) {
+function setup(overrides: Partial<Options> = {}) {
   const sent: Sent[] = []
   const closed: number[] = []
   let nextNid = 1
   const clock = createClock()
   const engine = createEngine({
     projectName: "demo",
-    settleMs,
+    options: { ...defaults, ...overrides },
     send(title, body, urgency) {
       const id = nextNid++
       sent.push({ title, body, urgency })
@@ -157,5 +158,45 @@ describe("createEngine", () => {
       properties: { error: { data: { message: "x".repeat(300) } } },
     })
     expect(sent[0]?.body.length).toBe(240)
+  })
+
+  test("skips request notifications when disabled", () => {
+    const { engine, sent, advance } = setup({ notifyRequests: false })
+    engine.handle({ type: "permission.asked", properties: { id: "p1", permission: "bash" } })
+    advance(250)
+    expect(sent).toEqual([])
+  })
+
+  test("skips question notifications when disabled", () => {
+    const { engine, sent } = setup({ notifyQuestions: false })
+    engine.handle({
+      type: "message.part.updated",
+      properties: {
+        part: {
+          type: "tool",
+          tool: "askuserquestion",
+          id: "q1",
+          state: { status: "pending" },
+          input: { questions: [{ question: "Ship it?" }] },
+        },
+      },
+    })
+    expect(sent).toEqual([])
+  })
+
+  test("skips error notifications when disabled", () => {
+    const { engine, sent } = setup({ notifyErrors: false })
+    engine.handle({
+      type: "session.error",
+      properties: { error: { data: { message: "boom" } } },
+    })
+    expect(sent).toEqual([])
+  })
+
+  test("uses the configured urgency", () => {
+    const { engine, sent, advance } = setup({ urgency: "low" })
+    engine.handle({ type: "permission.asked", properties: { id: "p1", permission: "bash" } })
+    advance(250)
+    expect(sent[0]?.urgency).toBe("low")
   })
 })

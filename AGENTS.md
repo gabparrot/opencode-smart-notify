@@ -4,7 +4,7 @@
 
 This is an [OpenCode](https://opencode.ai) plugin. OpenCode still emits permission events when `--auto` or **Enable auto-approve permissions** is on. Other notifiers pop on every ask. This plugin waits a short settle window and only notifies if the request is still waiting.
 
-Current state: Linux-only (`notify-send`), single file `src/index.ts`, no tests, no config, not published. Local install is a `file://` path (or a copy in `~/.config/opencode/plugins/`). Do not load it alongside `opencode-notify`.
+Current state: Linux-only (`notify-send`). Configurable via `~/.config/opencode/opencode-smart-notify.json` or plugin tuple options. Unit tests via `bun test`. Not published. Local install is a `file://` path (or a copy in `~/.config/opencode/plugins/`). Do not load it alongside `opencode-notify`.
 
 Read [README.md](./README.md) for behavior and [ROADMAP.md](./ROADMAP.md) for ordered work. Follow the roadmap phase order. Do not skip a phase unless the next item says it can land in parallel.
 
@@ -27,4 +27,4 @@ v1 is Linux-correct, configurable, tested, then cross-platform, then npm. Action
 
 ## Verify
 
-There is no test script yet. After phase 2, typecheck. After phase 4, run the test command and keep it green. Manual check: with `--auto` on, a bash/edit ask must not leave a desktop popup; a real pending ask must notify; reply or focus must dismiss it.
+Run `bun run typecheck` and `bun test`. Manual check: with `--auto` on, a bash/edit ask must not leave a desktop popup; a real pending ask must notify; reply or focus must dismiss it.

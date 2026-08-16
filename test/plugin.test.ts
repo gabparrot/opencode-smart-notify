@@ -51,4 +51,24 @@ describe("createPlugin", () => {
     })
     expect(sent).toEqual([{ body: "from-dir: boom" }])
   })
+
+  test("honors notifyErrors from tuple options", async () => {
+    const sent: Array<{ title: string }> = []
+    const plugin = createPlugin({
+      loadConfig: () => ({}),
+      send(title) {
+        sent.push({ title })
+        return 1
+      },
+      close() {},
+    })
+    const hooks = await plugin(input({ name: "demo" }), { notifyErrors: false })
+    await hooks.event?.({
+      event: {
+        type: "session.error",
+        properties: { error: { data: { message: "boom" } } },
+      } as never,
+    })
+    expect(sent).toEqual([])
+  })
 })

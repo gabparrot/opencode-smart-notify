@@ -29,7 +29,7 @@ Everything after this should read from one options object instead of more hardco
 
 - [x] Load `~/.config/opencode/opencode-smart-notify.json` with defaults
 - [x] Support plugin tuple options in `opencode.json` (`["opencode-smart-notify", { ... }]`)
-- [ ] First knobs: `settleMs`, `notifyRequests`, `notifyQuestions`, `notifyErrors`, `notifyIdle`, `urgency`
+- [x] First knobs: `settleMs`, `notifyRequests`, `notifyQuestions`, `notifyErrors`, `notifyIdle`, `urgency`
 
 ## 4. Tests
 

@@ -3,8 +3,8 @@ import { defaults, loadFileConfig, parseOptions, resolveProjectName } from "./co
 import { createEngine } from "./engine"
 import { createNotifier } from "./notify"
 
-export { SETTLE_MS, defaults, loadFileConfig, parseOptions, resolveProjectName } from "./config"
-export type { Options } from "./config"
+export { SETTLE_MS, URGENCIES, defaults, loadFileConfig, parseOptions, resolveProjectName } from "./config"
+export type { Options, Urgency } from "./config"
 export { createEngine, isAbortedError, requestIds } from "./engine"
 export { createNotifier } from "./notify"
 export { MAX_TRACKED, createTracked } from "./tracked"
@@ -25,7 +25,7 @@ export function createPlugin(deps?: {
     }
     const engine = createEngine({
       projectName: resolveProjectName(project as { name?: string } | undefined, directory),
-      settleMs: config.settleMs,
+      options: config,
       send: deps?.send ?? notifier.send,
       close: deps?.close ?? notifier.close,
       setTimeout: deps?.setTimeout,
