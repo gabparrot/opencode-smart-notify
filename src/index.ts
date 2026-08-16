@@ -41,6 +41,14 @@ function send(title: string, body: string, urgency = "normal"): number | undefin
   }
 }
 
+function requestIds(props: { id?: string; permissionID?: string; requestID?: string }) {
+  const ids = new Set<string>()
+  if (props.id) ids.add(props.id)
+  if (props.permissionID) ids.add(props.permissionID)
+  if (props.requestID) ids.add(props.requestID)
+  return [...ids]
+}
+
 function isAbortedError(error: { name?: string; data?: { name?: string } } | undefined) {
   return error?.name === "MessageAbortedError" || error?.data?.name === "MessageAbortedError"
 }
@@ -127,26 +135,35 @@ export const OpencodeSmartNotify: Plugin = async ({ project, directory }) => {
       if (event.type === "permission.asked") {
         const props = event.properties as {
           id?: string
+          permissionID?: string
+          requestID?: string
           permission?: string
           patterns?: string[]
         }
-        if (!props.id) return
+        const id = requestIds(props)[0]
+        if (!id) return
         const extra = props.patterns?.join(", ") ?? ""
-        queue(props.id, [props.permission ?? "permission", extra].filter(Boolean).join(" "))
+        queue(id, [props.permission ?? "permission", extra].filter(Boolean).join(" "))
         return
       }
 
       if (event.type === "permission.updated") {
-        const props = event.properties as { id?: string; type?: string; title?: string }
-        if (!props.id) return
-        queue(props.id, [props.type ?? "permission", props.title ?? ""].filter(Boolean).join(" "))
+        const props = event.properties as {
+          id?: string
+          permissionID?: string
+          requestID?: string
+          type?: string
+          title?: string
+        }
+        const id = requestIds(props)[0]
+        if (!id) return
+        queue(id, [props.type ?? "permission", props.title ?? ""].filter(Boolean).join(" "))
         return
       }
 
       if (event.type === "permission.replied") {
-        const props = event.properties as { permissionID?: string; requestID?: string }
-        const id = props.permissionID ?? props.requestID
-        if (id) {
+        const props = event.properties as { id?: string; permissionID?: string; requestID?: string }
+        for (const id of requestIds(props)) {
           cancel(id)
           replied.set(id, true)
           retract(id)

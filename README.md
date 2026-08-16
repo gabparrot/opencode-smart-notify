@@ -35,7 +35,7 @@ Do not run this alongside `opencode-notify` or you will get duplicate popups.
 
 ## How it works
 
-1. `permission.asked` / `permission.updated` starts a 250ms timer.
+1. `permission.asked` / `permission.updated` starts a 250ms timer. Both events are treated as the same request when they share an ID.
 2. `permission.replied` cancels that timer, records the ID (so a late ask is still suppressed), and retracts a popup already on screen.
 3. If the timer fires, the request is still waiting on you, so a notification is sent.
 4. `MessageAbortedError` (ESC / cancel) is ignored. It is not an `opencode error` popup.
