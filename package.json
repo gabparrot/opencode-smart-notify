@@ -1,6 +1,6 @@
 {
   "name": "opencode-smart-notify",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Desktop notifications for OpenCode that stay quiet when auto-approve handles the request",
   "type": "module",
   "license": "MIT",
@@ -29,7 +29,11 @@
   "keywords": [
     "opencode",
     "opencode-plugin",
-    "notifications"
+    "notifications",
+    "notify-send",
+    "libnotify",
+    "linux",
+    "desktop"
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",

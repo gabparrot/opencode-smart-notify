@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+- Document install, config options, and the 0.1.1 load fix
+
 ## 0.1.1
 
 - Default-export a v1 `{ id, server }` module so OpenCode can load the plugin

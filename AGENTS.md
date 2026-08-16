@@ -4,7 +4,7 @@
 
 This is an [OpenCode](https://opencode.ai) plugin. OpenCode still emits permission events when `--auto` or **Enable auto-approve permissions** is on. Other notifiers pop on every ask. This plugin waits a short settle window and only notifies if the request is still waiting.
 
-Current state: Linux-only (`notify-send`). Configurable via `~/.config/opencode/opencode-smart-notify.json` or plugin tuple options. Unit tests via `bun test`. Not published. Local install is a `file://` path (or a copy in `~/.config/opencode/plugins/`). Do not load it alongside `opencode-notify`.
+Current state: Linux-only (`notify-send`). Published as `opencode-smart-notify` on npm. Configurable via `~/.config/opencode/opencode-smart-notify.json` or plugin tuple options. Unit tests via `bun test`. Default export is `{ id, server }`. Do not load it alongside `opencode-notify`.
 
 Read [README.md](./README.md) for behavior and [ROADMAP.md](./ROADMAP.md) for ordered work. Follow the roadmap phase order. Do not skip a phase unless the next item says it can land in parallel.
 
@@ -17,7 +17,7 @@ v1 is Linux-correct, configurable, tested, then cross-platform, then npm. Action
 ## Standards
 
 - Match existing style: no comments unless asked, argv-form `spawn`/`spawnSync` (never a shell string), best-effort notify (never throw into OpenCode).
-- Default export a `Plugin`. Keep the public name `opencode-smart-notify`.
+- Default export `{ id, server }`. Keep the public name `opencode-smart-notify`.
 - Handle both v1 (`permission.updated`, `permissionID`) and v2 (`permission.asked`, `requestID`) events. Dedup the same request.
 - Treat `MessageAbortedError` as cancel, not an error notification.
 - Notification bodies can appear on a lock screen. Truncate. Do not put secrets, tokens, or raw command lines in popups when sanitization exists; until then, keep payloads short.

@@ -66,6 +66,7 @@ Only after Linux behavior and config are stable.
 - [x] Pin a version in the README (avoid `@latest` cache confusion)
 - [ ] Optional: PR onto the OpenCode ecosystem plugin list
 - [x] Changelog / GitHub releases
+- [x] Document install and config on GitHub and npm
 
 ## Out of scope for v1
 
