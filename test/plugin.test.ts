@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import type { PluginInput } from "@opencode-ai/plugin"
-import { createPlugin } from "../src/index"
+import plugin, { createPlugin } from "../src/index"
 
 function input(partial: { name?: string; directory?: string } = {}): PluginInput {
   return {
@@ -70,5 +70,12 @@ describe("createPlugin", () => {
       } as never,
     })
     expect(sent).toEqual([])
+  })
+})
+
+describe("default export", () => {
+  test("is a v1 plugin module with a server function", () => {
+    expect(plugin.id).toBe("opencode-smart-notify")
+    expect(typeof plugin.server).toBe("function")
   })
 })

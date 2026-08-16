@@ -41,4 +41,7 @@ export function createPlugin(deps?: {
 
 export const OpencodeSmartNotify: Plugin = createPlugin()
 
-export default OpencodeSmartNotify
+export default {
+  id: "opencode-smart-notify",
+  server: OpencodeSmartNotify,
+}

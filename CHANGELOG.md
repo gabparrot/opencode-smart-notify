@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- Default-export a v1 `{ id, server }` module so OpenCode can load the plugin
+
 ## 0.1.0
 
 - Notify only when a permission request is still pending after the settle window

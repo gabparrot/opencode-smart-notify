@@ -23,7 +23,7 @@ From npm, pin a release in `~/.config/opencode/opencode.json` or `opencode.jsonc
 
 ```jsonc
 {
-  "plugin": ["opencode-smart-notify@0.1.0"]
+  "plugin": ["opencode-smart-notify@0.1.1"]
 }
 ```
 
@@ -31,7 +31,7 @@ GitHub also works:
 
 ```jsonc
 {
-  "plugin": ["github:gabparrot/opencode-smart-notify#v0.1.0"]
+  "plugin": ["github:gabparrot/opencode-smart-notify#v0.1.1"]
 }
 ```
 

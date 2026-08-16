@@ -1,6 +1,6 @@
 {
   "name": "opencode-smart-notify",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Desktop notifications for OpenCode that stay quiet when auto-approve handles the request",
   "type": "module",
   "license": "MIT",
