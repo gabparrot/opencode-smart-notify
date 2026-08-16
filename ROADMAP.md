@@ -35,8 +35,8 @@ Everything after this should read from one options object instead of more hardco
 
 Lock the heuristic before platforms and extra events multiply cases.
 
-- [ ] Unit-test settle / cancel / replied-before-asked / abort-as-non-error / dedup
-- [ ] Fake `notify-send` (do not require a desktop session)
+- [x] Unit-test settle / cancel / replied-before-asked / abort-as-non-error / dedup
+- [x] Fake `notify-send` (do not require a desktop session)
 - [ ] CI: typecheck + tests on push
 
 ## 5. Feature-complete on Linux

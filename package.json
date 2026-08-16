@@ -31,13 +31,15 @@
     "notifications"
   ],
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
   },
   "peerDependencies": {
     "@opencode-ai/plugin": "*"
   },
   "devDependencies": {
     "@opencode-ai/plugin": "*",
+    "@types/bun": "^1.3.14",
     "@types/node": "^24.0.0",
     "typescript": "^5.9.0"
   },
