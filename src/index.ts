@@ -2,6 +2,31 @@ import type { Plugin } from "@opencode-ai/plugin"
 import { spawnSync } from "node:child_process"
 
 const SETTLE_MS = 250
+const MAX_TRACKED = 256
+
+function createTracked<T>() {
+  const items = new Map<string, T>()
+  return {
+    get(id: string) {
+      return items.get(id)
+    },
+    has(id: string) {
+      return items.has(id)
+    },
+    set(id: string, value: T) {
+      if (items.has(id)) items.delete(id)
+      items.set(id, value)
+      while (items.size > MAX_TRACKED) {
+        const oldest = items.keys().next().value
+        if (oldest === undefined) break
+        items.delete(oldest)
+      }
+    },
+    delete(id: string) {
+      items.delete(id)
+    },
+  }
+}
 
 function send(title: string, body: string, urgency = "normal"): number | undefined {
   const args = ["-u", urgency, "-a", "opencode", "-i", "dialog-information-symbolic", title, body]
@@ -66,9 +91,9 @@ export const OpencodeSmartNotify: Plugin = async ({ project, directory }) => {
     "opencode"
 
   const pending = new Map<string, ReturnType<typeof setTimeout>>()
-  const asked = new Set<string>()
-  const replied = new Set<string>()
-  const shown = new Map<string, number>()
+  const asked = createTracked<true>()
+  const replied = createTracked<true>()
+  const shown = createTracked<number>()
 
   function cancel(id: string) {
     const timer = pending.get(id)
@@ -84,7 +109,7 @@ export const OpencodeSmartNotify: Plugin = async ({ project, directory }) => {
 
   function queue(id: string, body: string) {
     if (replied.has(id) || asked.has(id)) return
-    asked.add(id)
+    asked.set(id, true)
     cancel(id)
     pending.set(
       id,
@@ -123,7 +148,7 @@ export const OpencodeSmartNotify: Plugin = async ({ project, directory }) => {
         const id = props.permissionID ?? props.requestID
         if (id) {
           cancel(id)
-          replied.add(id)
+          replied.set(id, true)
           retract(id)
         }
         return
@@ -146,7 +171,7 @@ export const OpencodeSmartNotify: Plugin = async ({ project, directory }) => {
         if (part.state?.status !== "pending") return
         const id = part.id ?? "question"
         if (asked.has(id)) return
-        asked.add(id)
+        asked.set(id, true)
         const question = part.input?.questions?.[0]?.question ?? "question"
         send("opencode question", `${projectName}: ${question}`.slice(0, 240), "critical")
       }
