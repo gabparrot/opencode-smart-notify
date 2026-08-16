@@ -122,8 +122,8 @@ function closeNotification(id: number) {
   }
 }
 
-export const OpencodeSmartNotify: Plugin = async ({ project, directory }) => {
-  const config = { ...defaults, ...loadFileConfig() }
+export const OpencodeSmartNotify: Plugin = async ({ project, directory }, options) => {
+  const config = { ...defaults, ...loadFileConfig(), ...parseOptions(options) }
   const projectName =
     (project as { name?: string } | undefined)?.name ??
     (directory ? directory.split("/").filter(Boolean).pop() : null) ??

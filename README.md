@@ -62,6 +62,14 @@ Optional `~/.config/opencode/opencode-smart-notify.json`:
 }
 ```
 
+Or pass options in `opencode.json` (these override the file):
+
+```jsonc
+{
+  "plugin": [["opencode-smart-notify", { "settleMs": 250 }]]
+}
+```
+
 ## Requirements
 
 - OpenCode
