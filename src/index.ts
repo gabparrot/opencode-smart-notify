@@ -1,8 +1,38 @@
 import type { Plugin } from "@opencode-ai/plugin"
 import { spawnSync } from "node:child_process"
+import { readFileSync } from "node:fs"
+import { homedir } from "node:os"
+import { join } from "node:path"
 
 export const SETTLE_MS = 250
 const MAX_TRACKED = 256
+
+export type Options = {
+  settleMs: number
+}
+
+export const defaults: Options = {
+  settleMs: SETTLE_MS,
+}
+
+export function parseOptions(raw: unknown): Partial<Options> {
+  if (!raw || typeof raw !== "object") return {}
+  const o = raw as Record<string, unknown>
+  const out: Partial<Options> = {}
+  if (typeof o.settleMs === "number" && Number.isFinite(o.settleMs) && o.settleMs >= 0) {
+    out.settleMs = o.settleMs
+  }
+  return out
+}
+
+export function loadFileConfig(): Partial<Options> {
+  try {
+    const path = join(homedir(), ".config/opencode/opencode-smart-notify.json")
+    return parseOptions(JSON.parse(readFileSync(path, "utf8")))
+  } catch {
+    return {}
+  }
+}
 
 function createTracked<T>() {
   const items = new Map<string, T>()
@@ -93,6 +123,7 @@ function closeNotification(id: number) {
 }
 
 export const OpencodeSmartNotify: Plugin = async ({ project, directory }) => {
+  const config = { ...defaults, ...loadFileConfig() }
   const projectName =
     (project as { name?: string } | undefined)?.name ??
     (directory ? directory.split("/").filter(Boolean).pop() : null) ??
@@ -126,7 +157,7 @@ export const OpencodeSmartNotify: Plugin = async ({ project, directory }) => {
         if (replied.has(id)) return
         const nid = send("opencode request", `${projectName}: ${body}`.slice(0, 240), "critical")
         if (nid !== undefined) shown.set(id, nid)
-      }, SETTLE_MS),
+      }, config.settleMs),
     )
   }
 

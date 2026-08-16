@@ -27,7 +27,7 @@ Needed before tests, npm, or a public GitHub page.
 
 Everything after this should read from one options object instead of more hardcoding.
 
-- [ ] Load `~/.config/opencode/opencode-smart-notify.json` with defaults
+- [x] Load `~/.config/opencode/opencode-smart-notify.json` with defaults
 - [ ] Support plugin tuple options in `opencode.json` (`["opencode-smart-notify", { ... }]`)
 - [ ] First knobs: `settleMs`, `notifyRequests`, `notifyQuestions`, `notifyErrors`, `notifyIdle`, `urgency`
 

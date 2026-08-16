@@ -52,6 +52,16 @@ Do not run this alongside `opencode-notify` or you will get duplicate popups.
 
 That covers `opencode --auto`, the TUI auto-approve toggle, and any other path that replies before you need to look.
 
+## Config
+
+Optional `~/.config/opencode/opencode-smart-notify.json`:
+
+```json
+{
+  "settleMs": 250
+}
+```
+
 ## Requirements
 
 - OpenCode
