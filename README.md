@@ -24,11 +24,19 @@ The package ships TypeScript. OpenCode loads it with Bun; there is no `dist/` bu
 
 ## Install
 
-Pin a release in `~/.config/opencode/opencode.json` or `opencode.jsonc`:
+### npm
+
+Add the plugin to `~/.config/opencode/opencode.json` or `opencode.jsonc`:
+
+See the npm install example above for tuple options.
+
+OpenCode installs it from the [npm registry](https://www.npmjs.com/package/opencode-smart-notify) on startup.
+
+With options:
 
 ```jsonc
 {
-  "plugin": ["opencode-smart-notify@0.1.2"]
+  "plugin": [["opencode-smart-notify@0.1.2", { "notifyErrors": false }]]
 }
 ```
 
@@ -36,7 +44,7 @@ Restart OpenCode after changing plugin config.
 
 Do not run this alongside `opencode-notify` or you will get duplicate popups.
 
-### Other install methods
+### GitHub
 
 ```jsonc
 {
