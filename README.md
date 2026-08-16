@@ -19,21 +19,19 @@ The package ships TypeScript. OpenCode loads it with Bun; there is no `dist/` bu
 
 ## Install
 
-Pin a release in `~/.config/opencode/opencode.json` or `opencode.jsonc`:
+From npm, pin a release in `~/.config/opencode/opencode.json` or `opencode.jsonc`:
+
+```jsonc
+{
+  "plugin": ["opencode-smart-notify@0.1.0"]
+}
+```
+
+GitHub also works:
 
 ```jsonc
 {
   "plugin": ["github:gabparrot/opencode-smart-notify#v0.1.0"]
-}
-```
-
-Or install the release tarball:
-
-```jsonc
-{
-  "plugin": [
-    "https://github.com/gabparrot/opencode-smart-notify/releases/download/v0.1.0/opencode-smart-notify-0.1.0.tgz"
-  ]
 }
 ```
 
