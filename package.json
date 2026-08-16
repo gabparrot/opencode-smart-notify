@@ -16,8 +16,16 @@
     "opencode-plugin",
     "notifications"
   ],
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
   "peerDependencies": {
     "@opencode-ai/plugin": "*"
+  },
+  "devDependencies": {
+    "@opencode-ai/plugin": "*",
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
   },
   "opencode": {
     "name": "opencode-smart-notify",

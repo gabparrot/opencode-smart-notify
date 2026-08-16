@@ -17,7 +17,7 @@ The settle window is the product. Make it correct before adding surface area.
 
 Needed before tests, npm, or a public GitHub page.
 
-- [ ] Add `tsconfig.json` and `@opencode-ai/plugin` as a devDependency so the plugin typechecks
+- [x] Add `tsconfig.json` and `@opencode-ai/plugin` as a devDependency so the plugin typechecks
 - [ ] Fill `package.json`: `repository`, `bugs`, `homepage`, `engines`, `exports`
 - [ ] Decide the publish shape: ship TypeScript (OpenCode/Bun) or a built `dist/` — pick one and set `main` / `opencode.entry` accordingly
 - [ ] Add npm install instructions to the README (`"plugin": ["opencode-smart-notify"]`)

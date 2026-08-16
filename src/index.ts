@@ -132,8 +132,11 @@ export const OpencodeSmartNotify: Plugin = async ({ project, directory }) => {
 
   return {
     event: async ({ event }) => {
-      if (event.type === "permission.asked") {
-        const props = event.properties as {
+      const type = (event as { type: string }).type
+      const properties = (event as { properties?: unknown }).properties ?? {}
+
+      if (type === "permission.asked") {
+        const props = properties as {
           id?: string
           permissionID?: string
           requestID?: string
@@ -147,8 +150,8 @@ export const OpencodeSmartNotify: Plugin = async ({ project, directory }) => {
         return
       }
 
-      if (event.type === "permission.updated") {
-        const props = event.properties as {
+      if (type === "permission.updated") {
+        const props = properties as {
           id?: string
           permissionID?: string
           requestID?: string
@@ -161,8 +164,8 @@ export const OpencodeSmartNotify: Plugin = async ({ project, directory }) => {
         return
       }
 
-      if (event.type === "permission.replied") {
-        const props = event.properties as { id?: string; permissionID?: string; requestID?: string }
+      if (type === "permission.replied") {
+        const props = properties as { id?: string; permissionID?: string; requestID?: string }
         for (const id of requestIds(props)) {
           cancel(id)
           replied.set(id, true)
@@ -171,8 +174,8 @@ export const OpencodeSmartNotify: Plugin = async ({ project, directory }) => {
         return
       }
 
-      if (event.type === "session.error") {
-        const props = event.properties as {
+      if (type === "session.error") {
+        const props = properties as {
           error?: { name?: string; data?: { message?: string; name?: string } }
         }
         if (isAbortedError(props.error)) return
@@ -181,8 +184,8 @@ export const OpencodeSmartNotify: Plugin = async ({ project, directory }) => {
         return
       }
 
-      if (event.type === "message.part.updated") {
-        const part = (event.properties as { part?: { type?: string; tool?: string; id?: string; state?: { status?: string }; input?: { questions?: Array<{ question?: string }> } } }).part
+      if (type === "message.part.updated") {
+        const part = (properties as { part?: { type?: string; tool?: string; id?: string; state?: { status?: string }; input?: { questions?: Array<{ question?: string }> } } }).part
         if (part?.type !== "tool") return
         if (part.tool?.toLowerCase() !== "askuserquestion") return
         if (part.state?.status !== "pending") return
