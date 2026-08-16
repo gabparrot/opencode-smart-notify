@@ -78,4 +78,9 @@ describe("default export", () => {
     expect(plugin.id).toBe("opencode-smart-notify")
     expect(typeof plugin.server).toBe("function")
   })
+
+  test("can be initialized the way OpenCode loads plugins", async () => {
+    const hooks = await plugin.server(input({ name: "demo" }), {})
+    expect(typeof hooks.event).toBe("function")
+  })
 })
