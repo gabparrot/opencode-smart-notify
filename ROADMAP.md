@@ -63,9 +63,9 @@ Only after Linux behavior and config are stable.
 ## 7. Publish
 
 - [ ] `npm publish` as `opencode-smart-notify`
-- [ ] Pin a version in the README (avoid `@latest` cache confusion)
+- [x] Pin a version in the README (avoid `@latest` cache confusion)
 - [ ] Optional: PR onto the OpenCode ecosystem plugin list
-- [ ] Changelog / GitHub releases
+- [x] Changelog / GitHub releases
 
 ## Out of scope for v1
 
