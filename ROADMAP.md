@@ -37,7 +37,7 @@ Lock the heuristic before platforms and extra events multiply cases.
 
 - [x] Unit-test settle / cancel / replied-before-asked / abort-as-non-error / dedup
 - [x] Fake `notify-send` (do not require a desktop session)
-- [ ] CI: typecheck + tests on push
+- [x] CI: typecheck + tests on push
 
 ## 5. Feature-complete on Linux
 
