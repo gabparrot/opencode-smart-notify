@@ -3,14 +3,55 @@ import { spawnSync } from "node:child_process"
 
 const SETTLE_MS = 250
 
-function send(title: string, body: string, urgency = "normal") {
+function send(title: string, body: string, urgency = "normal"): number | undefined {
+  const args = ["-u", urgency, "-a", "opencode", "-i", "dialog-information-symbolic", title, body]
   try {
-    spawnSync(
-      "notify-send",
-      ["-u", urgency, "-a", "opencode", "-i", "dialog-information-symbolic", title, body],
-      { stdio: "ignore", timeout: 5000 },
-    )
+    const printed = spawnSync("notify-send", ["-p", ...args], { encoding: "utf8", timeout: 5000 })
+    if (!printed.error && printed.status === 0) {
+      const parsed = Number.parseInt(printed.stdout?.trim() ?? "", 10)
+      return Number.isFinite(parsed) ? parsed : undefined
+    }
+    spawnSync("notify-send", args, { stdio: "ignore", timeout: 5000 })
   } catch {
+  }
+}
+
+function closeNotification(id: number) {
+  const attempts: Array<[string, string[]]> = [
+    [
+      "gdbus",
+      [
+        "call",
+        "--session",
+        "--dest",
+        "org.freedesktop.Notifications",
+        "--object-path",
+        "/org/freedesktop/Notifications",
+        "--method",
+        "org.freedesktop.Notifications.CloseNotification",
+        String(id),
+      ],
+    ],
+    [
+      "busctl",
+      [
+        "--user",
+        "call",
+        "org.freedesktop.Notifications",
+        "/org/freedesktop/Notifications",
+        "org.freedesktop.Notifications",
+        "CloseNotification",
+        "u",
+        String(id),
+      ],
+    ],
+  ]
+  for (const [cmd, argv] of attempts) {
+    try {
+      const result = spawnSync(cmd, argv, { stdio: "ignore", timeout: 5000 })
+      if (!result.error && result.status === 0) return
+    } catch {
+    }
   }
 }
 
@@ -23,11 +64,18 @@ export const OpencodeSmartNotify: Plugin = async ({ project, directory }) => {
   const pending = new Map<string, ReturnType<typeof setTimeout>>()
   const asked = new Set<string>()
   const replied = new Set<string>()
+  const shown = new Map<string, number>()
 
   function cancel(id: string) {
     const timer = pending.get(id)
     if (timer) clearTimeout(timer)
     pending.delete(id)
+  }
+
+  function retract(id: string) {
+    const nid = shown.get(id)
+    shown.delete(id)
+    if (nid !== undefined) closeNotification(nid)
   }
 
   function queue(id: string, body: string) {
@@ -39,7 +87,8 @@ export const OpencodeSmartNotify: Plugin = async ({ project, directory }) => {
       setTimeout(() => {
         pending.delete(id)
         if (replied.has(id)) return
-        send("opencode request", `${projectName}: ${body}`.slice(0, 240), "critical")
+        const nid = send("opencode request", `${projectName}: ${body}`.slice(0, 240), "critical")
+        if (nid !== undefined) shown.set(id, nid)
       }, SETTLE_MS),
     )
   }
@@ -71,6 +120,7 @@ export const OpencodeSmartNotify: Plugin = async ({ project, directory }) => {
         if (id) {
           cancel(id)
           replied.add(id)
+          retract(id)
         }
         return
       }

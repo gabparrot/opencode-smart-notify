@@ -36,7 +36,7 @@ Do not run this alongside `opencode-notify` or you will get duplicate popups.
 ## How it works
 
 1. `permission.asked` / `permission.updated` starts a 250ms timer.
-2. `permission.replied` cancels that timer and records the ID, so a reply that arrives first still suppresses the popup.
+2. `permission.replied` cancels that timer, records the ID (so a late ask is still suppressed), and retracts a popup already on screen.
 3. If the timer fires, the request is still waiting on you, so a notification is sent.
 
 That covers `opencode --auto`, the TUI auto-approve toggle, and any other path that replies before you need to look.
