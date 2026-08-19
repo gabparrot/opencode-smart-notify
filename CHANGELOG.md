@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Notify when an agent finishes (`session.idle` → `opencode idle`)
+- Stay silent on idle after ESC / `MessageAbortedError`
+- Retract an idle popup when the session becomes busy again
+
 ## 0.2.0
 
 - macOS Notification Center backend (`osascript`)

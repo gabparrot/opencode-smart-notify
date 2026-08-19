@@ -54,7 +54,7 @@
   "opencode": {
     "name": "opencode-smart-notify",
     "displayName": "OpenCode Smart Notify",
-    "description": "Notify on permission requests, questions, and errors. Skip requests that auto-approve.",
+    "description": "Notify on permission requests, questions, errors, and when an agent finishes. Skip requests that auto-approve.",
     "entry": "src/index.ts"
   }
 }

@@ -16,9 +16,10 @@ Linux, macOS, and Windows. Use **0.1.1 or later** — 0.1.0 does not load.
 | Auto-approved / already-replied request | none |
 | User question (`askuserquestion`) | `opencode question` |
 | Session error | `opencode error` |
+| Agent finished (`session.idle`) | `opencode idle` |
 | ESC / `MessageAbortedError` | none |
 
-A request popup already on screen is retracted when `permission.replied` arrives (Linux and Windows). macOS Notification Center cannot dismiss a posted banner from a script.
+A request popup already on screen is retracted when `permission.replied` arrives (Linux and Windows). An idle popup is retracted when the session becomes busy again. macOS Notification Center cannot dismiss a posted banner from a script.
 
 Clicking a notification focuses the running Zed window (`zed://`). Zed has no URL to switch to an existing ACP thread — `zed://agent` would start a new one, so this plugin does not send it. Override with `clickCommand` if you need a different handler.
 
@@ -74,7 +75,8 @@ Do not copy only `src/index.ts` into `~/.config/opencode/plugins/` — the plugi
 2. `permission.replied` cancels that timer, records the ID (so a late ask stays silent), and retracts a popup already on screen.
 3. If the timer fires, the request is still waiting on you, so a notification is sent.
 4. `MessageAbortedError` is ignored. It is not an `opencode error` popup.
-5. Clicking a popup focuses Zed (`zed://`). It does not open `zed://agent`, which would start a new thread.
+5. `session.idle` sends `opencode idle` when the agent finishes. ESC / abort stays silent. A later `session.status` busy retracts that popup (Linux and Windows).
+6. Clicking a popup focuses Zed (`zed://`). It does not open `zed://agent`, which would start a new thread.
 
 That covers `opencode --auto`, the TUI auto-approve toggle, and any other path that replies before you need to look.
 
@@ -88,7 +90,7 @@ Optional `~/.config/opencode/opencode-smart-notify.json`. Plugin tuple options i
 | `notifyRequests` | `true` | Permission requests |
 | `notifyQuestions` | `true` | `askuserquestion` |
 | `notifyErrors` | `true` | Session errors (not cancel) |
-| `notifyIdle` | `true` | Reserved for session-idle notifications |
+| `notifyIdle` | `true` | Agent finished (`session.idle`) |
 | `urgency` | `"critical"` | `low`, `normal`, or `critical` |
 | `clickCommand` | *(auto)* | Argv run on click. `{sessionId}` is substituted. Default: focus Zed (`zed://`) |
 
