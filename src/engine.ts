@@ -44,7 +44,7 @@ export function createEngine(input: EngineInput): Engine {
   const replied = createTracked<true>()
   const shown = createTracked<number>()
   const aborted = createTracked<true>()
-  const idleShown = createTracked<number>()
+  const idleNotified = createTracked<true>()
 
   function cancel(id: string) {
     const timer = pending.get(id)
@@ -62,11 +62,14 @@ export function createEngine(input: EngineInput): Engine {
     if (nid !== undefined) shown.set(id, nid)
   }
 
-  function retractIdle(sessionId?: string) {
-    if (!sessionId) return
-    const nid = idleShown.get(sessionId)
-    idleShown.delete(sessionId)
-    if (nid !== undefined) input.close(nid)
+  function notifyIdle(sessionId?: string) {
+    if (sessionId && aborted.has(sessionId)) return
+    if (!input.options.notifyIdle) return
+    if (sessionId && idleNotified.has(sessionId)) return
+    if (sessionId) idleNotified.set(sessionId, true)
+    input.send("opencode idle", `${input.projectName}: finished`.slice(0, 240), input.options.urgency, {
+      sessionId,
+    })
   }
 
   function queue(id: string, body: string, sessionId?: string) {
@@ -155,27 +158,21 @@ export function createEngine(input: EngineInput): Engine {
       }
 
       if (type === "session.idle") {
-        const props = properties as { sessionID?: string }
-        const sessionId = sessionIdOf(props)
-        if (sessionId && aborted.has(sessionId)) {
-          aborted.delete(sessionId)
-          return
-        }
-        if (!input.options.notifyIdle) return
-        if (sessionId && idleShown.has(sessionId)) return
-        const nid = input.send("opencode idle", `${input.projectName}: finished`.slice(0, 240), input.options.urgency, {
-          sessionId,
-          onId: (id) => {
-            if (sessionId) idleShown.set(sessionId, id)
-          },
-        })
-        if (sessionId && nid !== undefined) idleShown.set(sessionId, nid)
+        notifyIdle(sessionIdOf(properties as { sessionID?: string }))
         return
       }
 
       if (type === "session.status") {
         const props = properties as { sessionID?: string; status?: { type?: string } }
-        if (props.status?.type === "busy") retractIdle(sessionIdOf(props))
+        const sessionId = sessionIdOf(props)
+        if (props.status?.type === "busy") {
+          if (sessionId) {
+            aborted.delete(sessionId)
+            idleNotified.delete(sessionId)
+          }
+          return
+        }
+        if (props.status?.type === "idle") notifyIdle(sessionId)
         return
       }
 

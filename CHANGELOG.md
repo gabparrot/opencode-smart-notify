@@ -2,9 +2,9 @@
 
 ## Unreleased
 
-- Notify when an agent finishes (`session.idle` → `opencode idle`)
+- Notify when an agent finishes (`session.status` idle / `session.idle` → `opencode idle`)
 - Stay silent on idle after ESC / `MessageAbortedError`
-- Retract an idle popup when the session becomes busy again
+- Do not retract an idle popup when title or background work sets the session busy
 
 ## 0.2.0
 

@@ -217,11 +217,17 @@ describe("createEngine", () => {
     expect(sent).toEqual([{ title: "opencode idle", body: "demo: finished", urgency: "critical", sessionId: "ses_1" }])
   })
 
-  test("notifies idle only once until the session is busy again", () => {
+  test("notifies idle only once per turn", () => {
     const { engine, sent } = setup()
     engine.handle({ type: "session.idle", properties: { sessionID: "ses_1" } })
-    engine.handle({ type: "session.idle", properties: { sessionID: "ses_1" } })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "idle" } } })
     expect(sent).toHaveLength(1)
+  })
+
+  test("notifies on session.status idle", () => {
+    const { engine, sent } = setup()
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "idle" } } })
+    expect(sent).toEqual([{ title: "opencode idle", body: "demo: finished", urgency: "critical", sessionId: "ses_1" }])
   })
 
   test("skips idle after MessageAbortedError", () => {
@@ -231,6 +237,7 @@ describe("createEngine", () => {
       properties: { sessionID: "ses_1", error: { name: "MessageAbortedError" } },
     })
     engine.handle({ type: "session.idle", properties: { sessionID: "ses_1" } })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "idle" } } })
     expect(sent).toEqual([])
   })
 
@@ -241,23 +248,23 @@ describe("createEngine", () => {
       properties: { sessionID: "ses_1", error: { name: "MessageAbortedError" } },
     })
     engine.handle({ type: "session.idle", properties: { sessionID: "ses_1" } })
-    engine.handle({ type: "session.idle", properties: { sessionID: "ses_1" } })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "idle" } } })
     expect(sent).toEqual([{ title: "opencode idle", body: "demo: finished", urgency: "critical", sessionId: "ses_1" }])
   })
 
   test("skips idle notifications when disabled", () => {
     const { engine, sent } = setup({ notifyIdle: false })
     engine.handle({ type: "session.idle", properties: { sessionID: "ses_1" } })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "idle" } } })
     expect(sent).toEqual([])
   })
 
-  test("retracts an idle notification when the session becomes busy", () => {
+  test("keeps an idle notification when the session becomes busy", () => {
     const { engine, sent, closed } = setup()
     engine.handle({ type: "session.idle", properties: { sessionID: "ses_1" } })
-    expect(sent).toHaveLength(1)
     engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
-    expect(closed).toEqual([1])
-    engine.handle({ type: "session.idle", properties: { sessionID: "ses_1" } })
-    expect(sent).toHaveLength(2)
+    expect(sent).toHaveLength(1)
+    expect(closed).toEqual([])
   })
 })
