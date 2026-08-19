@@ -213,12 +213,14 @@ describe("createEngine", () => {
 
   test("notifies when a session goes idle", () => {
     const { engine, sent } = setup()
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
     engine.handle({ type: "session.idle", properties: { sessionID: "ses_1" } })
     expect(sent).toEqual([{ title: "opencode idle", body: "demo: finished", urgency: "critical", sessionId: "ses_1" }])
   })
 
   test("notifies idle only once per turn", () => {
     const { engine, sent } = setup()
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
     engine.handle({ type: "session.idle", properties: { sessionID: "ses_1" } })
     engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "idle" } } })
     expect(sent).toHaveLength(1)
@@ -226,12 +228,21 @@ describe("createEngine", () => {
 
   test("notifies on session.status idle", () => {
     const { engine, sent } = setup()
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
     engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "idle" } } })
     expect(sent).toEqual([{ title: "opencode idle", body: "demo: finished", urgency: "critical", sessionId: "ses_1" }])
   })
 
+  test("skips idle when the session was never busy", () => {
+    const { engine, sent } = setup()
+    engine.handle({ type: "session.idle", properties: { sessionID: "ses_1" } })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "idle" } } })
+    expect(sent).toEqual([])
+  })
+
   test("skips idle after MessageAbortedError", () => {
     const { engine, sent } = setup()
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
     engine.handle({
       type: "session.error",
       properties: { sessionID: "ses_1", error: { name: "MessageAbortedError" } },
@@ -241,8 +252,30 @@ describe("createEngine", () => {
     expect(sent).toEqual([])
   })
 
-  test("notifies idle on a later turn after abort", () => {
+  test("skips idle after a real session error", () => {
     const { engine, sent } = setup()
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
+    engine.handle({
+      type: "session.error",
+      properties: { sessionID: "ses_1", error: { data: { message: "boom" } } },
+    })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "idle" } } })
+    expect(sent).toEqual([{ title: "opencode error", body: "demo: boom", urgency: "critical", sessionId: "ses_1" }])
+  })
+
+  test("does not treat title or background busy as a new turn", () => {
+    const { engine, sent, closed } = setup()
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
+    engine.handle({ type: "session.idle", properties: { sessionID: "ses_1" } })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "idle" } } })
+    expect(sent).toEqual([{ title: "opencode idle", body: "demo: finished", urgency: "critical", sessionId: "ses_1" }])
+    expect(closed).toEqual([])
+  })
+
+  test("stays silent after abort when title or background work runs", () => {
+    const { engine, sent } = setup()
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
     engine.handle({
       type: "session.error",
       properties: { sessionID: "ses_1", error: { name: "MessageAbortedError" } },
@@ -250,11 +283,72 @@ describe("createEngine", () => {
     engine.handle({ type: "session.idle", properties: { sessionID: "ses_1" } })
     engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
     engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "idle" } } })
+    expect(sent).toEqual([])
+  })
+
+  test("notifies idle on a later turn after abort", () => {
+    const { engine, sent } = setup()
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
+    engine.handle({
+      type: "session.error",
+      properties: { sessionID: "ses_1", error: { name: "MessageAbortedError" } },
+    })
+    engine.handle({ type: "session.idle", properties: { sessionID: "ses_1" } })
+    engine.handle({
+      type: "message.updated",
+      properties: { sessionID: "ses_1", info: { id: "msg_2", role: "user" } },
+    })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "idle" } } })
     expect(sent).toEqual([{ title: "opencode idle", body: "demo: finished", urgency: "critical", sessionId: "ses_1" }])
+  })
+
+  test("notifies idle on a later turn after a successful finish", () => {
+    const { engine, sent } = setup()
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
+    engine.handle({ type: "session.idle", properties: { sessionID: "ses_1" } })
+    engine.handle({
+      type: "message.updated",
+      properties: { sessionID: "ses_1", info: { id: "msg_2", role: "user" } },
+    })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "idle" } } })
+    expect(sent).toHaveLength(2)
+  })
+
+  test("ignores updates to the same user message", () => {
+    const { engine, sent } = setup()
+    engine.handle({
+      type: "message.updated",
+      properties: { sessionID: "ses_1", info: { id: "msg_1", role: "user" } },
+    })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
+    engine.handle({ type: "session.idle", properties: { sessionID: "ses_1" } })
+    engine.handle({
+      type: "message.updated",
+      properties: { sessionID: "ses_1", info: { id: "msg_1", role: "user" } },
+    })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "idle" } } })
+    expect(sent).toHaveLength(1)
+  })
+
+  test("ignores assistant message updates", () => {
+    const { engine, sent } = setup()
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
+    engine.handle({ type: "session.idle", properties: { sessionID: "ses_1" } })
+    engine.handle({
+      type: "message.updated",
+      properties: { sessionID: "ses_1", info: { id: "msg_a", role: "assistant" } },
+    })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "idle" } } })
+    expect(sent).toHaveLength(1)
   })
 
   test("skips idle notifications when disabled", () => {
     const { engine, sent } = setup({ notifyIdle: false })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
     engine.handle({ type: "session.idle", properties: { sessionID: "ses_1" } })
     engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "idle" } } })
     expect(sent).toEqual([])
@@ -262,6 +356,7 @@ describe("createEngine", () => {
 
   test("keeps an idle notification when the session becomes busy", () => {
     const { engine, sent, closed } = setup()
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
     engine.handle({ type: "session.idle", properties: { sessionID: "ses_1" } })
     engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
     expect(sent).toHaveLength(1)

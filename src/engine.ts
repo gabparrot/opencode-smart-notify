@@ -43,8 +43,10 @@ export function createEngine(input: EngineInput): Engine {
   const asked = createTracked<true>()
   const replied = createTracked<true>()
   const shown = createTracked<number>()
-  const aborted = createTracked<true>()
+  const active = createTracked<true>()
+  const suppressIdle = createTracked<true>()
   const idleNotified = createTracked<true>()
+  const lastUser = createTracked<string>()
 
   function cancel(id: string) {
     const timer = pending.get(id)
@@ -62,11 +64,24 @@ export function createEngine(input: EngineInput): Engine {
     if (nid !== undefined) shown.set(id, nid)
   }
 
+  function beginTurn(sessionId: string) {
+    suppressIdle.delete(sessionId)
+    idleNotified.delete(sessionId)
+  }
+
+  function markBusy(sessionId?: string) {
+    if (!sessionId) return
+    if (idleNotified.has(sessionId) || suppressIdle.has(sessionId)) return
+    active.set(sessionId, true)
+  }
+
   function notifyIdle(sessionId?: string) {
-    if (sessionId && aborted.has(sessionId)) return
+    if (!sessionId || !active.has(sessionId)) return
+    active.delete(sessionId)
+    if (suppressIdle.has(sessionId)) return
     if (!input.options.notifyIdle) return
-    if (sessionId && idleNotified.has(sessionId)) return
-    if (sessionId) idleNotified.set(sessionId, true)
+    if (idleNotified.has(sessionId)) return
+    idleNotified.set(sessionId, true)
     input.send("opencode idle", `${input.projectName}: finished`.slice(0, 240), input.options.urgency, {
       sessionId,
     })
@@ -145,10 +160,8 @@ export function createEngine(input: EngineInput): Engine {
           error?: { name?: string; data?: { message?: string; name?: string } }
         }
         const sessionId = sessionIdOf(props)
-        if (isAbortedError(props.error)) {
-          if (sessionId) aborted.set(sessionId, true)
-          return
-        }
+        if (sessionId) suppressIdle.set(sessionId, true)
+        if (isAbortedError(props.error)) return
         if (!input.options.notifyErrors) return
         const message = props.error?.data?.message ?? "An error occurred"
         input.send("opencode error", `${input.projectName}: ${message}`.slice(0, 240), input.options.urgency, {
@@ -165,14 +178,22 @@ export function createEngine(input: EngineInput): Engine {
       if (type === "session.status") {
         const props = properties as { sessionID?: string; status?: { type?: string } }
         const sessionId = sessionIdOf(props)
-        if (props.status?.type === "busy") {
-          if (sessionId) {
-            aborted.delete(sessionId)
-            idleNotified.delete(sessionId)
-          }
+        if (props.status?.type === "busy" || props.status?.type === "retry") {
+          markBusy(sessionId)
           return
         }
         if (props.status?.type === "idle") notifyIdle(sessionId)
+        return
+      }
+
+      if (type === "message.updated") {
+        const props = properties as { sessionID?: string; info?: { id?: string; role?: string; sessionID?: string } }
+        const sessionId = sessionIdOf(props) ?? sessionIdOf(props.info ?? {})
+        const id = props.info?.id
+        if (!sessionId || props.info?.role !== "user" || !id) return
+        if (lastUser.get(sessionId) === id) return
+        lastUser.set(sessionId, id)
+        beginTurn(sessionId)
         return
       }
 
