@@ -6,7 +6,7 @@ Desktop notifications for [OpenCode](https://opencode.ai) that stay quiet when a
 
 [npm](https://www.npmjs.com/package/opencode-smart-notify) · [changelog](./CHANGELOG.md)
 
-Linux only (`notify-send`). Use **0.1.1 or later** — 0.1.0 does not load.
+Linux, macOS, and Windows. Use **0.1.1 or later** — 0.1.0 does not load.
 
 ## What it notifies
 
@@ -18,9 +18,9 @@ Linux only (`notify-send`). Use **0.1.1 or later** — 0.1.0 does not load.
 | Session error | `opencode error` |
 | ESC / `MessageAbortedError` | none |
 
-A request popup already on screen is retracted when `permission.replied` arrives.
+A request popup already on screen is retracted when `permission.replied` arrives (Linux and Windows). macOS Notification Center cannot dismiss a posted banner from a script.
 
-Clicking a notification focuses Zed and opens the agent panel (`zed://agent?session=…`). If that URL cannot be opened, it falls back to launching `zed`. Override with `clickCommand` if you need a different handler.
+Clicking a notification focuses Zed and opens the agent panel (`zed://agent?session=…`) on Linux. If that URL cannot be opened, it falls back to launching `zed`. Override with `clickCommand` if you need a different handler.
 
 The package ships TypeScript. OpenCode loads it with Bun; there is no `dist/` build.
 
@@ -30,7 +30,11 @@ The package ships TypeScript. OpenCode loads it with Bun; there is no `dist/` bu
 
 Add the plugin to `~/.config/opencode/opencode.json` or `opencode.jsonc`:
 
-See the npm install example above for tuple options.
+```jsonc
+{
+  "plugin": ["opencode-smart-notify@0.2.0"]
+}
+```
 
 OpenCode installs it from the [npm registry](https://www.npmjs.com/package/opencode-smart-notify) on startup.
 
@@ -38,7 +42,7 @@ With options:
 
 ```jsonc
 {
-  "plugin": [["opencode-smart-notify@0.1.2", { "notifyErrors": false }]]
+  "plugin": [["opencode-smart-notify@0.2.0", { "notifyErrors": false }]]
 }
 ```
 
@@ -50,7 +54,7 @@ Do not run this alongside `opencode-notify` or you will get duplicate popups.
 
 ```jsonc
 {
-  "plugin": ["github:gabparrot/opencode-smart-notify#v0.1.2"]
+  "plugin": ["github:gabparrot/opencode-smart-notify#v0.2.0"]
 }
 ```
 
@@ -90,14 +94,16 @@ Optional `~/.config/opencode/opencode-smart-notify.json`. Plugin tuple options i
 
 ```jsonc
 {
-  "plugin": [["opencode-smart-notify@0.1.2", { "notifyErrors": false }]]
+  "plugin": [["opencode-smart-notify@0.2.0", { "notifyErrors": false }]]
 }
 ```
 
 ## Requirements
 
 - OpenCode
-- `notify-send` on `PATH` (`libnotify-bin` on Debian/Ubuntu)
+- Linux: `notify-send` on `PATH` (`libnotify-bin` on Debian/Ubuntu)
+- macOS: Notification Center (`osascript`, built in)
+- Windows 10/11: inbox `powershell.exe` (Windows PowerShell 5.1). No extra PowerShell install.
 
 ## License
 

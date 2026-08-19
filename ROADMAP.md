@@ -55,10 +55,10 @@ Parity with what people expect from a notify plugin, still Linux-only.
 
 Only after Linux behavior and config are stable.
 
-- [ ] macOS backend (Notification Center / `osascript`)
-- [ ] Windows backend (toast / PowerShell)
-- [ ] Shared notifier interface; `notify-send` becomes the Linux adapter
-- [ ] README setup per OS; drop “Linux only”
+- [x] macOS backend (Notification Center / `osascript`)
+- [x] Windows backend (toast / PowerShell)
+- [x] Shared notifier interface; `notify-send` becomes the Linux adapter
+- [x] README setup per OS; drop “Linux only”
 
 ## 7. Publish
 

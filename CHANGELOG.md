@@ -1,7 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 
+- macOS Notification Center backend (`osascript`)
+- Windows toast backend via inbox `powershell.exe` (Windows 10/11, no extra install)
+- Shared notifier interface; Linux keeps `gdbus` / `notify-send`
+- Resolve Windows directory paths when naming the project
 - Clicking a notification opens the Zed agent panel for that session (`zed://agent?session=…`), and falls back to launching `zed`
 - Optional `clickCommand` argv if you need a different click handler
 

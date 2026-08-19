@@ -4,7 +4,7 @@
 
 This is an [OpenCode](https://opencode.ai) plugin. OpenCode still emits permission events when `--auto` or **Enable auto-approve permissions** is on. Other notifiers pop on every ask. This plugin waits a short settle window and only notifies if the request is still waiting.
 
-Current state: Linux-only (`notify-send`). Published as `opencode-smart-notify` on npm. Configurable via `~/.config/opencode/opencode-smart-notify.json` or plugin tuple options. Unit tests via `bun test`. Default export is `{ id, server }`. Do not load it alongside `opencode-notify`.
+Current state: Linux (`gdbus` / `notify-send`), macOS (`osascript`), Windows (inbox PowerShell toast). Published as `opencode-smart-notify` on npm. Configurable via `~/.config/opencode/opencode-smart-notify.json` or plugin tuple options. Unit tests via `bun test`. Default export is `{ id, server }`. Do not load it alongside `opencode-notify`.
 
 Read [README.md](./README.md) for behavior and [ROADMAP.md](./ROADMAP.md) for ordered work. Follow the roadmap phase order. Do not skip a phase unless the next item says it can land in parallel.
 
@@ -22,7 +22,7 @@ v1 is Linux-correct, configurable, tested, then cross-platform, then npm. Action
 - Treat `MessageAbortedError` as cancel, not an error notification.
 - Notification bodies can appear on a lock screen. Truncate. Do not put secrets, tokens, or raw command lines in popups when sanitization exists; until then, keep payloads short.
 - Fail open: if focus or close-notification is unavailable, still notify rather than swallow events.
-- Do not add macOS/Windows backends, npm publish, or extra events until the matching roadmap phase.
+- Do not add extra events, action buttons, or npm publish until the matching roadmap phase.
 - Do not commit unless the user asks.
 
 ## Verify

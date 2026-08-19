@@ -59,5 +59,5 @@ export function loadFileConfig(path = configPath()): Partial<Options> {
 }
 
 export function resolveProjectName(project?: { name?: string }, directory?: string) {
-  return project?.name ?? (directory ? directory.split("/").filter(Boolean).pop() : undefined) ?? "opencode"
+  return project?.name ?? (directory ? directory.split(/[\\/]/).filter(Boolean).pop() : undefined) ?? "opencode"
 }

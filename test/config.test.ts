@@ -92,6 +92,8 @@ describe("resolveProjectName", () => {
     expect(resolveProjectName({ name: "demo" }, "/tmp/other")).toBe("demo")
     expect(resolveProjectName({}, "/tmp/from-dir")).toBe("from-dir")
     expect(resolveProjectName(undefined, "/tmp/from-dir/")).toBe("from-dir")
+    expect(resolveProjectName(undefined, "C:\\Users\\gab\\from-dir")).toBe("from-dir")
+    expect(resolveProjectName(undefined, "C:\\Users\\gab\\from-dir\\")).toBe("from-dir")
     expect(resolveProjectName(undefined, undefined)).toBe("opencode")
   })
 })
