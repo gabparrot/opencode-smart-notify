@@ -14,6 +14,7 @@ export type Options = {
   notifyErrors: boolean
   notifyIdle: boolean
   urgency: Urgency
+  clickCommand?: string[]
 }
 
 export const defaults: Options = {
@@ -42,6 +43,9 @@ export function parseOptions(raw: unknown): Partial<Options> {
   if (typeof o.notifyIdle === "boolean") out.notifyIdle = o.notifyIdle
   if (typeof o.urgency === "string" && (URGENCIES as readonly string[]).includes(o.urgency)) {
     out.urgency = o.urgency as Urgency
+  }
+  if (Array.isArray(o.clickCommand) && o.clickCommand.length > 0 && o.clickCommand.every((item) => typeof item === "string")) {
+    out.clickCommand = o.clickCommand
   }
   return out
 }

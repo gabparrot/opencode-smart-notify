@@ -1,12 +1,16 @@
 import type { Plugin } from "@opencode-ai/plugin"
+import type { ActivateTarget } from "./activate"
 import { defaults, loadFileConfig, parseOptions, resolveProjectName } from "./config"
 import { createEngine } from "./engine"
 import { createNotifier } from "./notify"
 
+export { activate, expandClickCommand, zedAgentUrl, zedSocketCandidates } from "./activate"
+export type { ActivateTarget } from "./activate"
 export { SETTLE_MS, URGENCIES, defaults, loadFileConfig, parseOptions, resolveProjectName } from "./config"
 export type { Options, Urgency } from "./config"
-export { createEngine, isAbortedError, requestIds } from "./engine"
+export { createEngine, isAbortedError, requestIds, sessionIdOf } from "./engine"
 export { createNotifier } from "./notify"
+export type { SendExtra } from "./notify"
 export { MAX_TRACKED, createTracked } from "./tracked"
 
 export function createPlugin(deps?: {
@@ -15,14 +19,18 @@ export function createPlugin(deps?: {
   close?: (id: number) => void
   setTimeout?: (fn: () => void, ms?: number) => unknown
   clearTimeout?: (id: unknown) => void
+  activate?: (target: ActivateTarget) => void
 }): Plugin {
-  const notifier = createNotifier()
   return async ({ project, directory }, options) => {
     const config = {
       ...defaults,
       ...(deps?.loadConfig ?? loadFileConfig)(),
       ...parseOptions(options),
     }
+    const notifier = createNotifier({
+      clickCommand: config.clickCommand,
+      activate: deps?.activate,
+    })
     const engine = createEngine({
       projectName: resolveProjectName(project as { name?: string } | undefined, directory),
       options: config,

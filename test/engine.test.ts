@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import { defaults, type Options } from "../src/config"
 import { createEngine, isAbortedError, requestIds } from "../src/engine"
 
-type Sent = { title: string; body: string; urgency?: string }
+type Sent = { title: string; body: string; urgency?: string; sessionId?: string }
 
 function createClock() {
   let now = 0
@@ -36,9 +36,10 @@ function setup(overrides: Partial<Options> = {}) {
   const engine = createEngine({
     projectName: "demo",
     options: { ...defaults, ...overrides },
-    send(title, body, urgency) {
+    send(title, body, urgency, extra) {
       const id = nextNid++
-      sent.push({ title, body, urgency })
+      sent.push({ title, body, urgency, sessionId: extra?.sessionId })
+      extra?.onId?.(id)
       return id
     },
     close(id) {
@@ -75,7 +76,7 @@ describe("createEngine", () => {
     advance(249)
     expect(sent).toEqual([])
     advance(1)
-    expect(sent).toEqual([{ title: "opencode request", body: "demo: bash ls", urgency: "critical" }])
+    expect(sent).toEqual([{ title: "opencode request", body: "demo: bash ls", urgency: "critical", sessionId: undefined }])
   })
 
   test("cancels a pending timer on reply", () => {
@@ -127,7 +128,7 @@ describe("createEngine", () => {
       type: "session.error",
       properties: { error: { name: "UnknownError", data: { message: "boom" } } },
     })
-    expect(sent).toEqual([{ title: "opencode error", body: "demo: boom", urgency: "critical" }])
+    expect(sent).toEqual([{ title: "opencode error", body: "demo: boom", urgency: "critical", sessionId: undefined }])
   })
 
   test("notifies a pending askuserquestion once", () => {
@@ -141,7 +142,7 @@ describe("createEngine", () => {
     }
     engine.handle({ type: "message.part.updated", properties: { part } })
     engine.handle({ type: "message.part.updated", properties: { part } })
-    expect(sent).toEqual([{ title: "opencode question", body: "demo: Ship it?", urgency: "critical" }])
+    expect(sent).toEqual([{ title: "opencode question", body: "demo: Ship it?", urgency: "critical", sessionId: undefined }])
   })
 
   test("ignores asks without an id", () => {
@@ -191,6 +192,16 @@ describe("createEngine", () => {
       properties: { error: { data: { message: "boom" } } },
     })
     expect(sent).toEqual([])
+  })
+
+  test("forwards sessionID so a click can open the thread", () => {
+    const { engine, sent, advance } = setup()
+    engine.handle({
+      type: "permission.asked",
+      properties: { id: "p1", permission: "bash", sessionID: "ses_1" },
+    })
+    advance(250)
+    expect(sent[0]?.sessionId).toBe("ses_1")
   })
 
   test("uses the configured urgency", () => {

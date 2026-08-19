@@ -20,6 +20,8 @@ Linux only (`notify-send`). Use **0.1.1 or later** — 0.1.0 does not load.
 
 A request popup already on screen is retracted when `permission.replied` arrives.
 
+Clicking a notification focuses Zed and opens the agent panel (`zed://agent?session=…`). If that URL cannot be opened, it falls back to launching `zed`. Override with `clickCommand` if you need a different handler.
+
 The package ships TypeScript. OpenCode loads it with Bun; there is no `dist/` build.
 
 ## Install
@@ -68,6 +70,7 @@ Do not copy only `src/index.ts` into `~/.config/opencode/plugins/` — the plugi
 2. `permission.replied` cancels that timer, records the ID (so a late ask stays silent), and retracts a popup already on screen.
 3. If the timer fires, the request is still waiting on you, so a notification is sent.
 4. `MessageAbortedError` is ignored. It is not an `opencode error` popup.
+5. Clicking a popup opens `zed://agent?session=…`. If that fails, it just opens Zed.
 
 That covers `opencode --auto`, the TUI auto-approve toggle, and any other path that replies before you need to look.
 
@@ -83,6 +86,7 @@ Optional `~/.config/opencode/opencode-smart-notify.json`. Plugin tuple options i
 | `notifyErrors` | `true` | Session errors (not cancel) |
 | `notifyIdle` | `true` | Reserved for session-idle notifications |
 | `urgency` | `"critical"` | `low`, `normal`, or `critical` |
+| `clickCommand` | *(auto)* | Argv run on click. `{sessionId}` is substituted. Default: open `zed://agent?session=…`, else `zed` |
 
 ```jsonc
 {

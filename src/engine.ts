@@ -1,7 +1,9 @@
 import type { Options } from "./config"
+import type { SendExtra } from "./notify"
 import { createTracked } from "./tracked"
 
-export type SendFn = (title: string, body: string, urgency?: string) => number | undefined
+export type { SendExtra }
+export type SendFn = (title: string, body: string, urgency?: string, extra?: SendExtra) => number | undefined
 export type CloseFn = (id: number) => void
 
 export type Engine = {
@@ -29,6 +31,11 @@ export function isAbortedError(error: { name?: string; data?: { name?: string } 
   return error?.name === "MessageAbortedError" || error?.data?.name === "MessageAbortedError"
 }
 
+export function sessionIdOf(props: { sessionID?: string } | object) {
+  const sessionID = (props as { sessionID?: unknown }).sessionID
+  return typeof sessionID === "string" && sessionID ? sessionID : undefined
+}
+
 export function createEngine(input: EngineInput): Engine {
   const setTimer = input.setTimeout ?? ((fn: () => void, ms?: number) => setTimeout(fn, ms))
   const clearTimer = input.clearTimeout ?? ((id: unknown) => clearTimeout(id as ReturnType<typeof setTimeout>))
@@ -49,7 +56,11 @@ export function createEngine(input: EngineInput): Engine {
     if (nid !== undefined) input.close(nid)
   }
 
-  function queue(id: string, body: string) {
+  function remember(id: string, nid: number | undefined) {
+    if (nid !== undefined) shown.set(id, nid)
+  }
+
+  function queue(id: string, body: string, sessionId?: string) {
     if (!input.options.notifyRequests) return
     if (replied.has(id) || asked.has(id)) return
     asked.set(id, true)
@@ -59,8 +70,13 @@ export function createEngine(input: EngineInput): Engine {
       setTimer(() => {
         pending.delete(id)
         if (replied.has(id)) return
-        const nid = input.send("opencode request", `${input.projectName}: ${body}`.slice(0, 240), input.options.urgency)
-        if (nid !== undefined) shown.set(id, nid)
+        remember(
+          id,
+          input.send("opencode request", `${input.projectName}: ${body}`.slice(0, 240), input.options.urgency, {
+            sessionId,
+            onId: (nid) => shown.set(id, nid),
+          }),
+        )
       }, input.options.settleMs),
     )
   }
@@ -77,11 +93,12 @@ export function createEngine(input: EngineInput): Engine {
           requestID?: string
           permission?: string
           patterns?: string[]
+          sessionID?: string
         }
         const id = requestIds(props)[0]
         if (!id) return
         const extra = props.patterns?.join(", ") ?? ""
-        queue(id, [props.permission ?? "permission", extra].filter(Boolean).join(" "))
+        queue(id, [props.permission ?? "permission", extra].filter(Boolean).join(" "), sessionIdOf(props))
         return
       }
 
@@ -92,10 +109,11 @@ export function createEngine(input: EngineInput): Engine {
           requestID?: string
           type?: string
           title?: string
+          sessionID?: string
         }
         const id = requestIds(props)[0]
         if (!id) return
-        queue(id, [props.type ?? "permission", props.title ?? ""].filter(Boolean).join(" "))
+        queue(id, [props.type ?? "permission", props.title ?? ""].filter(Boolean).join(" "), sessionIdOf(props))
         return
       }
 
@@ -111,12 +129,15 @@ export function createEngine(input: EngineInput): Engine {
 
       if (type === "session.error") {
         const props = properties as {
+          sessionID?: string
           error?: { name?: string; data?: { message?: string; name?: string } }
         }
         if (!input.options.notifyErrors) return
         if (isAbortedError(props.error)) return
         const message = props.error?.data?.message ?? "An error occurred"
-        input.send("opencode error", `${input.projectName}: ${message}`.slice(0, 240), input.options.urgency)
+        input.send("opencode error", `${input.projectName}: ${message}`.slice(0, 240), input.options.urgency, {
+          sessionId: sessionIdOf(props),
+        })
         return
       }
 
@@ -127,6 +148,7 @@ export function createEngine(input: EngineInput): Engine {
               type?: string
               tool?: string
               id?: string
+              sessionID?: string
               state?: { status?: string }
               input?: { questions?: Array<{ question?: string }> }
             }
@@ -140,7 +162,9 @@ export function createEngine(input: EngineInput): Engine {
         if (asked.has(id)) return
         asked.set(id, true)
         const question = part.input?.questions?.[0]?.question ?? "question"
-        input.send("opencode question", `${input.projectName}: ${question}`.slice(0, 240), input.options.urgency)
+        input.send("opencode question", `${input.projectName}: ${question}`.slice(0, 240), input.options.urgency, {
+          sessionId: sessionIdOf(part),
+        })
       }
     },
   }

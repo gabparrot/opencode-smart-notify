@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Clicking a notification opens the Zed agent panel for that session (`zed://agent?session=…`), and falls back to launching `zed`
+- Optional `clickCommand` argv if you need a different click handler
+
 ## 0.1.2
 
 - Document install, config options, and the 0.1.1 load fix

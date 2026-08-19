@@ -57,6 +57,14 @@ describe("parseOptions", () => {
     expect(parseOptions({ urgency: "normal" })).toEqual({ urgency: "normal" })
     expect(parseOptions({ urgency: "critical" })).toEqual({ urgency: "critical" })
   })
+
+  test("accepts an argv clickCommand", () => {
+    expect(parseOptions({ clickCommand: ["zed", "-e", "zed://agent"] })).toEqual({
+      clickCommand: ["zed", "-e", "zed://agent"],
+    })
+    expect(parseOptions({ clickCommand: [] })).toEqual({})
+    expect(parseOptions({ clickCommand: "zed" })).toEqual({})
+  })
 })
 
 describe("loadFileConfig", () => {
