@@ -4,7 +4,7 @@ import { defaults, loadFileConfig, parseOptions, resolveProjectName } from "./co
 import { createEngine } from "./engine"
 import { createNotifier } from "./notify"
 
-export { activate, expandClickCommand, zedAgentUrl, zedSocketCandidates } from "./activate"
+export { activate, expandClickCommand, zedFocusUrl, zedSocketCandidates } from "./activate"
 export type { ActivateTarget } from "./activate"
 export { SETTLE_MS, URGENCIES, defaults, loadFileConfig, parseOptions, resolveProjectName } from "./config"
 export type { Options, Urgency } from "./config"

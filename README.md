@@ -20,7 +20,7 @@ Linux, macOS, and Windows. Use **0.1.1 or later** — 0.1.0 does not load.
 
 A request popup already on screen is retracted when `permission.replied` arrives (Linux and Windows). macOS Notification Center cannot dismiss a posted banner from a script.
 
-Clicking a notification focuses Zed and opens the agent panel (`zed://agent?session=…`) on Linux. If that URL cannot be opened, it falls back to launching `zed`. Override with `clickCommand` if you need a different handler.
+Clicking a notification focuses the running Zed window (`zed://`). Zed has no URL to switch to an existing ACP thread — `zed://agent` would start a new one, so this plugin does not send it. Override with `clickCommand` if you need a different handler.
 
 The package ships TypeScript. OpenCode loads it with Bun; there is no `dist/` build.
 
@@ -74,7 +74,7 @@ Do not copy only `src/index.ts` into `~/.config/opencode/plugins/` — the plugi
 2. `permission.replied` cancels that timer, records the ID (so a late ask stays silent), and retracts a popup already on screen.
 3. If the timer fires, the request is still waiting on you, so a notification is sent.
 4. `MessageAbortedError` is ignored. It is not an `opencode error` popup.
-5. Clicking a popup opens `zed://agent?session=…`. If that fails, it just opens Zed.
+5. Clicking a popup focuses Zed (`zed://`). It does not open `zed://agent`, which would start a new thread.
 
 That covers `opencode --auto`, the TUI auto-approve toggle, and any other path that replies before you need to look.
 
@@ -90,7 +90,7 @@ Optional `~/.config/opencode/opencode-smart-notify.json`. Plugin tuple options i
 | `notifyErrors` | `true` | Session errors (not cancel) |
 | `notifyIdle` | `true` | Reserved for session-idle notifications |
 | `urgency` | `"critical"` | `low`, `normal`, or `critical` |
-| `clickCommand` | *(auto)* | Argv run on click. `{sessionId}` is substituted. Default: open `zed://agent?session=…`, else `zed` |
+| `clickCommand` | *(auto)* | Argv run on click. `{sessionId}` is substituted. Default: focus Zed (`zed://`) |
 
 ```jsonc
 {

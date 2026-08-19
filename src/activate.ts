@@ -13,9 +13,8 @@ const CHANNELS = ["stable", "preview", "nightly", "dev"] as const
 const SOCKET_SCRIPT =
   "import socket,sys;s=socket.socket(socket.AF_UNIX,socket.SOCK_DGRAM);s.connect(sys.argv[1]);s.send(sys.argv[2].encode())"
 
-export function zedAgentUrl(sessionId?: string) {
-  if (!sessionId) return "zed://agent"
-  return `zed://agent?session=${encodeURIComponent(sessionId)}`
+export function zedFocusUrl() {
+  return "zed://"
 }
 
 export function zedSocketCandidates(home = homedir(), env: NodeJS.ProcessEnv = process.env) {
@@ -51,7 +50,7 @@ export function activate(
       if (cmd) spawn(cmd, args, { stdio: "ignore", timeout: 5000 })
       return
     }
-    const url = zedAgentUrl(target.sessionId)
+    const url = zedFocusUrl()
     for (const sock of zedSocketCandidates(home, env)) {
       if (exists(sock) && sendUnixDgram(sock, url, spawn)) return
     }
@@ -60,9 +59,7 @@ export function activate(
       ["xdg-open", [url]],
       ["open", [url]],
       ["zed", []],
-      ["xdg-open", ["zed://"]],
-      ["open", ["zed://"]],
-      ["flatpak", ["run", "dev.zed.Zed", url]],
+      ["flatpak", ["run", "dev.zed.Zed"]],
     ]
     for (const [cmd, args] of attempts) {
       try {

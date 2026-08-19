@@ -6,7 +6,8 @@
 - Windows toast backend via inbox `powershell.exe` (Windows 10/11, no extra install)
 - Shared notifier interface; Linux keeps `gdbus` / `notify-send`
 - Resolve Windows directory paths when naming the project
-- Clicking a notification opens the Zed agent panel for that session (`zed://agent?session=…`), and falls back to launching `zed`
+- Clicking a notification focuses the running Zed window (`zed://`)
+- Do not send `zed://agent` on click — that starts a new thread
 - Optional `clickCommand` argv if you need a different click handler
 
 ## 0.1.2
