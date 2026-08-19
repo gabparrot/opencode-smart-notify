@@ -43,7 +43,7 @@ Lock the heuristic before platforms and extra events multiply cases.
 
 Parity with what people expect from a notify plugin, still Linux-only.
 
-- [ ] Session done / idle notification (the “look back” signal)
+- [x] Session done / idle notification (the “look back” signal)
 - [ ] Optional suppress-when-focused (fail open if focus cannot be detected)
 - [ ] Close an already-shown notification when the OpenCode terminal becomes focused or the prompt is no longer waiting
 - [ ] Skip or separately gate subagent / child-session events

@@ -10,7 +10,7 @@ Read [README.md](./README.md) for behavior and [ROADMAP.md](./ROADMAP.md) for or
 
 ## Goal
 
-Notify only when a human still needs to look: pending permission, question, or real error. Stay silent when auto-approve, a prior reply, focus, or cancel already handled it. Retract a notification that is no longer relevant (replied or window focused).
+Notify only when a human still needs to look: pending permission, question, real error, or a finished turn. Stay silent when auto-approve, a prior reply, focus, or cancel already handled it. Retract a notification that is no longer relevant (replied, session busy again, or window focused).
 
 v1 is Linux-correct, configurable, tested, then cross-platform, then npm. Action buttons, sounds, quiet hours, and custom command hooks are out of scope until after publish.
 

@@ -43,6 +43,8 @@ export function createEngine(input: EngineInput): Engine {
   const asked = createTracked<true>()
   const replied = createTracked<true>()
   const shown = createTracked<number>()
+  const aborted = createTracked<true>()
+  const idleShown = createTracked<number>()
 
   function cancel(id: string) {
     const timer = pending.get(id)
@@ -58,6 +60,13 @@ export function createEngine(input: EngineInput): Engine {
 
   function remember(id: string, nid: number | undefined) {
     if (nid !== undefined) shown.set(id, nid)
+  }
+
+  function retractIdle(sessionId?: string) {
+    if (!sessionId) return
+    const nid = idleShown.get(sessionId)
+    idleShown.delete(sessionId)
+    if (nid !== undefined) input.close(nid)
   }
 
   function queue(id: string, body: string, sessionId?: string) {
@@ -132,12 +141,41 @@ export function createEngine(input: EngineInput): Engine {
           sessionID?: string
           error?: { name?: string; data?: { message?: string; name?: string } }
         }
+        const sessionId = sessionIdOf(props)
+        if (isAbortedError(props.error)) {
+          if (sessionId) aborted.set(sessionId, true)
+          return
+        }
         if (!input.options.notifyErrors) return
-        if (isAbortedError(props.error)) return
         const message = props.error?.data?.message ?? "An error occurred"
         input.send("opencode error", `${input.projectName}: ${message}`.slice(0, 240), input.options.urgency, {
-          sessionId: sessionIdOf(props),
+          sessionId,
         })
+        return
+      }
+
+      if (type === "session.idle") {
+        const props = properties as { sessionID?: string }
+        const sessionId = sessionIdOf(props)
+        if (sessionId && aborted.has(sessionId)) {
+          aborted.delete(sessionId)
+          return
+        }
+        if (!input.options.notifyIdle) return
+        if (sessionId && idleShown.has(sessionId)) return
+        const nid = input.send("opencode idle", `${input.projectName}: finished`.slice(0, 240), input.options.urgency, {
+          sessionId,
+          onId: (id) => {
+            if (sessionId) idleShown.set(sessionId, id)
+          },
+        })
+        if (sessionId && nid !== undefined) idleShown.set(sessionId, nid)
+        return
+      }
+
+      if (type === "session.status") {
+        const props = properties as { sessionID?: string; status?: { type?: string } }
+        if (props.status?.type === "busy") retractIdle(sessionIdOf(props))
         return
       }
 

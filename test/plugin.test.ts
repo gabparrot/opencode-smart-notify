@@ -52,6 +52,23 @@ describe("createPlugin", () => {
     expect(sent).toEqual([{ body: "from-dir: boom" }])
   })
 
+  test("honors notifyIdle from tuple options", async () => {
+    const sent: Array<{ title: string }> = []
+    const plugin = createPlugin({
+      loadConfig: () => ({}),
+      send(title) {
+        sent.push({ title })
+        return 1
+      },
+      close() {},
+    })
+    const hooks = await plugin(input({ name: "demo" }), { notifyIdle: false })
+    await hooks.event?.({
+      event: { type: "session.idle", properties: { sessionID: "ses_1" } } as never,
+    })
+    expect(sent).toEqual([])
+  })
+
   test("honors notifyErrors from tuple options", async () => {
     const sent: Array<{ title: string }> = []
     const plugin = createPlugin({
