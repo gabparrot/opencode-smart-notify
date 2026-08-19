@@ -75,7 +75,7 @@ Do not copy only `src/index.ts` into `~/.config/opencode/plugins/` — the plugi
 2. `permission.replied` cancels that timer, records the ID (so a late ask stays silent), and retracts a popup already on screen.
 3. If the timer fires, the request is still waiting on you, so a notification is sent.
 4. `MessageAbortedError` is ignored. It is not an `opencode error` popup.
-5. `session.status` idle / `session.idle` sends `opencode idle` when the agent finishes. ESC / abort stays silent. Title or background work does not retract that popup.
+5. After a session was busy, `session.status` idle / `session.idle` sends `opencode idle`. ESC, a real error, or an idle with no prior turn stays silent. Title or background work does not retract that popup or send a second one. A new user message starts the next turn.
 6. Clicking a popup focuses Zed (`zed://`). It does not open `zed://agent`, which would start a new thread.
 
 That covers `opencode --auto`, the TUI auto-approve toggle, and any other path that replies before you need to look.
