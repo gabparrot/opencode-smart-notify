@@ -67,6 +67,7 @@ export function createEngine(input: EngineInput): Engine {
   function beginTurn(sessionId: string) {
     suppressIdle.delete(sessionId)
     idleNotified.delete(sessionId)
+    active.set(sessionId, true)
   }
 
   function markBusy(sessionId?: string) {

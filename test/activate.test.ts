@@ -2,12 +2,12 @@ import { describe, expect, test } from "bun:test"
 import { activate, expandClickCommand, zedFocusUrl, zedSocketCandidates } from "../src/activate"
 import type { SpawnSyncFn } from "../src/notify"
 
-type Call = { command: string; args: string[] }
+type Call = { command: string; args: string[]; env?: NodeJS.ProcessEnv }
 
 function fakeSpawn(handler: (command: string, args: string[]) => { status?: number | null; error?: Error; stdout?: string } = () => ({ status: 0 })) {
   const calls: Call[] = []
-  const spawn: SpawnSyncFn = (command, args) => {
-    calls.push({ command, args })
+  const spawn: SpawnSyncFn = (command, args, options) => {
+    calls.push({ command, args, ...(options?.env ? { env: options.env } : {}) })
     return handler(command, args)
   }
   return { spawn, calls }
@@ -54,6 +54,20 @@ describe("activate", () => {
     expect(calls[0]?.args.at(-1)).toBe("zed://")
   })
 
+  test("uses an XDG activation token before the socket so Wayland can focus", () => {
+    const { spawn, calls } = fakeSpawn()
+    activate(
+      { sessionId: "ses_1", activationToken: "gnome-shell/1/token" },
+      spawn,
+      (path) => path === "/tmp/xdg/zed/zed-stable.sock",
+      "/home/gab",
+      { XDG_DATA_HOME: "/tmp/xdg", PATH: "/usr/bin" },
+    )
+    expect(calls[0]?.command).toBe("zed")
+    expect(calls[0]?.args).toEqual(["-e", "zed://"])
+    expect(calls[0]?.env?.XDG_ACTIVATION_TOKEN).toBe("gnome-shell/1/token")
+  })
+
   test("falls back to the zed CLI when no socket exists", () => {
     const { spawn, calls } = fakeSpawn()
     activate({ sessionId: "ses_1" }, spawn, () => false, "/home/gab", {})
@@ -63,7 +77,7 @@ describe("activate", () => {
   test("falls back to launching zed with no args", () => {
     const { spawn, calls } = fakeSpawn((command, args) => {
       if (args.includes("zed://")) return { status: 1 }
-      if (command === "python3") return { status: 1 }
+      if (command === "python3" || command === "gtk-launch") return { status: 1 }
       return { status: 0 }
     })
     activate({ sessionId: "ses_1" }, spawn, () => false, "/home/gab", {})

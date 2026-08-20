@@ -6,6 +6,8 @@
 - Stay silent on idle after ESC / `MessageAbortedError`, a real error, or an idle with no prior busy turn
 - Do not retract or re-send an idle popup when title or background work sets the session busy
 - Start the next idle turn on a new user message, not on generic busy
+- Treat a new user message as a busy turn so idle still fires if `session.status` busy is missing
+- Focus Zed on click under GNOME/Wayland: use the activation token, line-buffer `gdbus monitor`, and do not let `desktop-entry` swallow the click
 
 ## 0.2.0
 
