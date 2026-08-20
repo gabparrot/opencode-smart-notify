@@ -4,7 +4,7 @@ import { activate, type ActivateTarget } from "./activate"
 export type SpawnSyncFn = (
   command: string,
   args: string[],
-  options?: { encoding?: BufferEncoding; stdio?: "ignore"; timeout?: number },
+  options?: { encoding?: BufferEncoding; stdio?: "ignore"; timeout?: number; env?: NodeJS.ProcessEnv },
 ) => { status?: number | null; error?: Error; stdout?: string | Buffer }
 
 export type SpawnFn = (
@@ -35,7 +35,8 @@ export type NotifierInput = {
   platform?: string
 }
 
-const ACTION_RE = /ActionInvoked \(uint32 (\d+),\s*'([^']*)'\)/g
+const ACTION_RE = /ActionInvoked \(uint32 (\d+),\s*['"]([^'"]*)['"]\)/g
+const TOKEN_RE = /ActivationToken \(uint32 (\d+),\s*['"]([^'"]*)['"]\)/g
 const WIN_APP_ID = "{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\\WindowsPowerShell\\v1.0\\powershell.exe"
 const WIN_GROUP = "opencode-smart-notify"
 
@@ -69,15 +70,16 @@ function createLinuxNotifier(options: NotifierInput): Notifier {
   const spawn = options.spawn ?? spawnSync
   const watch = options.watch ?? nodeSpawn
   const clicks = new Map<number, string | undefined>()
+  const tokens = new Map<number, string>()
   let watching = false
 
-  function runActivate(sessionId?: string) {
+  function runActivate(sessionId?: string, activationToken?: string) {
     try {
       if (options.activate) {
-        options.activate({ sessionId, clickCommand: options.clickCommand })
+        options.activate({ sessionId, clickCommand: options.clickCommand, activationToken })
         return
       }
-      activate({ sessionId, clickCommand: options.clickCommand }, spawn)
+      activate({ sessionId, clickCommand: options.clickCommand, activationToken }, spawn)
     } catch {
     }
   }
@@ -88,33 +90,56 @@ function createLinuxNotifier(options: NotifierInput): Notifier {
     extra?.onId?.(id)
   }
 
+  function fire(id: number) {
+    if (!clicks.has(id)) return
+    const sessionId = clicks.get(id)
+    clicks.delete(id)
+    const activationToken = tokens.get(id)
+    tokens.delete(id)
+    runActivate(sessionId, activationToken)
+  }
+
+  function consume(text: string) {
+    TOKEN_RE.lastIndex = 0
+    ACTION_RE.lastIndex = 0
+    const ids = new Set<number>()
+    let match: RegExpExecArray | null
+    while ((match = TOKEN_RE.exec(text))) {
+      const id = Number.parseInt(match[1] ?? "", 10)
+      if (!Number.isFinite(id) || !clicks.has(id)) continue
+      tokens.set(id, match[2] ?? "")
+      ids.add(id)
+    }
+    while ((match = ACTION_RE.exec(text))) {
+      const id = Number.parseInt(match[1] ?? "", 10)
+      if (!Number.isFinite(id) || !clicks.has(id)) continue
+      ids.add(id)
+    }
+    for (const id of ids) fire(id)
+  }
+
   function ensureWatch() {
     if (watching) return
     watching = true
     try {
-      const child = watch("gdbus", ["monitor", "--session", "--dest", "org.freedesktop.Notifications"], {
-        encoding: "utf8",
-      })
-      child.stdout?.on("data", (chunk) => {
-        const text = String(chunk)
-        ACTION_RE.lastIndex = 0
-        let match: RegExpExecArray | null
-        while ((match = ACTION_RE.exec(text))) {
-          const id = Number.parseInt(match[1] ?? "", 10)
-          if (!Number.isFinite(id) || !clicks.has(id)) continue
-          const sessionId = clicks.get(id)
-          clicks.delete(id)
-          runActivate(sessionId)
-        }
-      })
+      const child = watch(
+        "stdbuf",
+        ["-oL", "gdbus", "monitor", "--session", "--dest", "org.freedesktop.Notifications"],
+        { encoding: "utf8" },
+      )
+      child.stdout?.on("data", (chunk) => consume(String(chunk)))
       child.on?.("error", () => {})
+      child.on?.("exit", () => {
+        watching = false
+      })
     } catch {
+      watching = false
     }
   }
 
   return {
     send(title: string, body: string, urgency = "normal", extra?: SendExtra) {
-      const hints = `{'urgency': <byte ${urgencyByte(urgency)}>, 'desktop-entry': <'dev.zed.Zed'>}`
+      const hints = `{'urgency': <byte ${urgencyByte(urgency)}>}`
       try {
         ensureWatch()
         const printed = spawn(
@@ -153,8 +178,6 @@ function createLinuxNotifier(options: NotifierInput): Notifier {
         "opencode",
         "-i",
         "dialog-information-symbolic",
-        "-h",
-        "string:desktop-entry:dev.zed.Zed",
         title,
         body,
       ]

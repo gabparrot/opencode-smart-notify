@@ -240,6 +240,16 @@ describe("createEngine", () => {
     expect(sent).toEqual([])
   })
 
+  test("treats a new user message as the start of a busy turn", () => {
+    const { engine, sent } = setup()
+    engine.handle({
+      type: "message.updated",
+      properties: { sessionID: "ses_1", info: { id: "msg_1", role: "user" } },
+    })
+    engine.handle({ type: "session.idle", properties: { sessionID: "ses_1" } })
+    expect(sent).toEqual([{ title: "opencode idle", body: "demo: finished", urgency: "critical", sessionId: "ses_1" }])
+  })
+
   test("skips idle after MessageAbortedError", () => {
     const { engine, sent } = setup()
     engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })

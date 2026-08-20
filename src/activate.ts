@@ -6,6 +6,7 @@ import type { SpawnSyncFn } from "./notify"
 export type ActivateTarget = {
   sessionId?: string
   clickCommand?: string[]
+  activationToken?: string
 }
 
 const CHANNELS = ["stable", "preview", "nightly", "dev"] as const
@@ -45,36 +46,66 @@ export function activate(
   env: NodeJS.ProcessEnv = process.env,
 ) {
   try {
+    const opts = spawnOpts(env, target.activationToken)
     if (target.clickCommand?.length) {
       const [cmd, ...args] = expandClickCommand(target.clickCommand, target.sessionId)
-      if (cmd) spawn(cmd, args, { stdio: "ignore", timeout: 5000 })
+      if (cmd) spawn(cmd, args, opts)
       return
     }
     const url = zedFocusUrl()
-    for (const sock of zedSocketCandidates(home, env)) {
-      if (exists(sock) && sendUnixDgram(sock, url, spawn)) return
-    }
     const attempts: Array<[string, string[]]> = [
       ["zed", ["-e", url]],
       ["xdg-open", [url]],
+      ["gtk-launch", ["dev.zed.Zed"]],
       ["open", [url]],
       ["zed", []],
       ["flatpak", ["run", "dev.zed.Zed"]],
     ]
-    for (const [cmd, args] of attempts) {
-      try {
-        const result = spawn(cmd, args, { stdio: "ignore", timeout: 5000 })
-        if (!result.error && (result.status === 0 || result.status == null)) return
-      } catch {
+    if (target.activationToken) {
+      for (const [cmd, args] of attempts) {
+        if (run(spawn, cmd, args, opts)) return
       }
+    }
+    for (const sock of zedSocketCandidates(home, env)) {
+      if (exists(sock) && sendUnixDgram(sock, url, spawn, opts)) return
+    }
+    for (const [cmd, args] of attempts) {
+      if (run(spawn, cmd, args, opts)) return
     }
   } catch {
   }
 }
 
-function sendUnixDgram(path: string, payload: string, spawn: SpawnSyncFn) {
+function spawnOpts(env: NodeJS.ProcessEnv, token?: string) {
+  return {
+    stdio: "ignore" as const,
+    timeout: 5000,
+    ...(token ? { env: { ...env, XDG_ACTIVATION_TOKEN: token } } : {}),
+  }
+}
+
+function run(
+  spawn: SpawnSyncFn,
+  command: string,
+  args: string[],
+  opts: { stdio: "ignore"; timeout: number; env?: NodeJS.ProcessEnv },
+) {
   try {
-    const result = spawn("python3", ["-c", SOCKET_SCRIPT, path, payload], { stdio: "ignore", timeout: 2000 })
+    const result = spawn(command, args, opts)
+    return !result.error && (result.status === 0 || result.status == null)
+  } catch {
+    return false
+  }
+}
+
+function sendUnixDgram(
+  path: string,
+  payload: string,
+  spawn: SpawnSyncFn,
+  opts: { stdio: "ignore"; timeout: number; env?: NodeJS.ProcessEnv },
+) {
+  try {
+    const result = spawn("python3", ["-c", SOCKET_SCRIPT, path, payload], { ...opts, timeout: 2000 })
     return !result.error && result.status === 0
   } catch {
     return false

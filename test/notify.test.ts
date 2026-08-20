@@ -53,7 +53,6 @@ describe("createNotifier", () => {
     const notifier = createNotifier({ spawn, watch, platform: "linux" })
     expect(notifier.send("opencode error", "boom")).toBe(7)
     expect(calls.some((call) => call.command === "notify-send" && call.args[0] === "-p")).toBe(true)
-    expect(calls.some((call) => call.args.includes("string:desktop-entry:dev.zed.Zed"))).toBe(true)
   })
 
   test("swallows notify-send exceptions", () => {
@@ -66,7 +65,7 @@ describe("createNotifier", () => {
   test("activates the matching session when the notification is clicked", () => {
     const { spawn } = fakeSpawn(() => ({ status: 0, stdout: "(uint32 9,)\n" }))
     const { watch, emit } = fakeWatch()
-    const activated: Array<{ sessionId?: string }> = []
+    const activated: Array<{ sessionId?: string; activationToken?: string }> = []
     const notifier = createNotifier({
       spawn,
       watch,
@@ -78,6 +77,39 @@ describe("createNotifier", () => {
     notifier.send("opencode request", "demo: bash", "critical", { sessionId: "ses_1" })
     emit("/org/freedesktop/Notifications: org.freedesktop.Notifications.ActionInvoked (uint32 9, 'default')\n")
     expect(activated).toEqual([{ sessionId: "ses_1" }])
+  })
+
+  test("passes a GNOME activation token so Wayland can focus Zed", () => {
+    const { spawn } = fakeSpawn(() => ({ status: 0, stdout: "(uint32 9,)\n" }))
+    const { watch, emit } = fakeWatch()
+    const activated: Array<{ sessionId?: string; activationToken?: string }> = []
+    const notifier = createNotifier({
+      spawn,
+      watch,
+      platform: "linux",
+      activate(target) {
+        activated.push(target)
+      },
+    })
+    notifier.send("opencode idle", "demo: finished", "critical", { sessionId: "ses_1" })
+    emit(
+      "/org/freedesktop/Notifications: org.freedesktop.Notifications.ActivationToken (uint32 9, 'gnome-shell/1/token')\n",
+    )
+    expect(activated).toEqual([{ sessionId: "ses_1", activationToken: "gnome-shell/1/token" }])
+  })
+
+  test("line-buffers gdbus monitor so a click is not stuck in stdout", () => {
+    const { spawn } = fakeSpawn(() => ({ status: 0, stdout: "(uint32 1,)\n" }))
+    const calls: Array<{ command: string; args: string[] }> = []
+    const watch: SpawnFn = (command, args) => {
+      calls.push({ command, args })
+      return fakeWatch().watch(command, args)
+    }
+    createNotifier({ spawn, watch, platform: "linux" }).send("t", "b")
+    expect(calls[0]).toEqual({
+      command: "stdbuf",
+      args: ["-oL", "gdbus", "monitor", "--session", "--dest", "org.freedesktop.Notifications"],
+    })
   })
 
   test("closes with gdbus when it succeeds", () => {

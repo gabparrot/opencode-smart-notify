@@ -54,6 +54,18 @@ describe("activate", () => {
     expect(calls[0]?.args.at(-1)).toBe("zed://")
   })
 
+  test("uses an XDG activation token before the socket so Wayland can focus", () => {
+    const { spawn, calls } = fakeSpawn()
+    activate(
+      { sessionId: "ses_1", activationToken: "gnome-shell/1/token" },
+      spawn,
+      (path) => path === "/tmp/xdg/zed/zed-stable.sock",
+      "/home/gab",
+      { XDG_DATA_HOME: "/tmp/xdg", PATH: "/usr/bin" },
+    )
+    expect(calls[0]).toEqual({ command: "zed", args: ["-e", "zed://"] })
+  })
+
   test("falls back to the zed CLI when no socket exists", () => {
     const { spawn, calls } = fakeSpawn()
     activate({ sessionId: "ses_1" }, spawn, () => false, "/home/gab", {})
@@ -63,7 +75,7 @@ describe("activate", () => {
   test("falls back to launching zed with no args", () => {
     const { spawn, calls } = fakeSpawn((command, args) => {
       if (args.includes("zed://")) return { status: 1 }
-      if (command === "python3") return { status: 1 }
+      if (command === "python3" || command === "gtk-launch") return { status: 1 }
       return { status: 0 }
     })
     activate({ sessionId: "ses_1" }, spawn, () => false, "/home/gab", {})
