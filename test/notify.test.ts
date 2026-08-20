@@ -14,19 +14,25 @@ function fakeSpawn(handler: (command: string, args: string[]) => { status?: numb
 
 function fakeWatch() {
   const listeners: Array<(chunk: string) => void> = []
+  const errors: Array<() => void> = []
   const watch: SpawnFn = () => ({
     stdout: {
       on(event, cb) {
         if (event === "data") listeners.push(cb)
       },
     },
-    on() {},
+    on(event, cb) {
+      if (event === "error") errors.push(() => cb())
+    },
     kill() {},
   })
   return {
     watch,
     emit(text: string) {
       for (const listener of listeners) listener(text)
+    },
+    emitError() {
+      for (const listener of errors) listener()
     },
   }
 }
@@ -75,7 +81,7 @@ describe("createNotifier", () => {
       },
     })
     notifier.send("opencode request", "demo: bash", "critical", { sessionId: "ses_1" })
-    emit("/org/freedesktop/Notifications: org.freedesktop.Notifications.ActionInvoked (uint32 9, 'default')\n")
+    emit('/org/freedesktop/Notifications: org.freedesktop.Notifications.ActionInvoked (uint32 9, "default")\n')
     expect(activated).toEqual([{ sessionId: "ses_1" }])
   })
 
@@ -96,6 +102,8 @@ describe("createNotifier", () => {
       "/org/freedesktop/Notifications: org.freedesktop.Notifications.ActivationToken (uint32 9, 'gnome-shell/1/token')\n",
     )
     expect(activated).toEqual([{ sessionId: "ses_1", activationToken: "gnome-shell/1/token" }])
+    emit("/org/freedesktop/Notifications: org.freedesktop.Notifications.ActionInvoked (uint32 9, 'default')\n")
+    expect(activated).toHaveLength(1)
   })
 
   test("line-buffers gdbus monitor so a click is not stuck in stdout", () => {
@@ -110,6 +118,35 @@ describe("createNotifier", () => {
       command: "stdbuf",
       args: ["-oL", "gdbus", "monitor", "--session", "--dest", "org.freedesktop.Notifications"],
     })
+  })
+
+  test("falls back to gdbus monitor when stdbuf is missing", () => {
+    const { spawn } = fakeSpawn(() => ({ status: 0, stdout: "(uint32 1,)\n" }))
+    const calls: Array<{ command: string; args: string[] }> = []
+    const watch: SpawnFn = (command, args) => {
+      calls.push({ command, args })
+      if (command === "stdbuf") throw new Error("missing")
+      return fakeWatch().watch(command, args)
+    }
+    createNotifier({ spawn, watch, platform: "linux" }).send("t", "b")
+    expect(calls[1]).toEqual({
+      command: "gdbus",
+      args: ["monitor", "--session", "--dest", "org.freedesktop.Notifications"],
+    })
+  })
+
+  test("falls back to gdbus monitor when stdbuf fails to spawn", () => {
+    const { spawn } = fakeSpawn(() => ({ status: 0, stdout: "(uint32 1,)\n" }))
+    const first = fakeWatch()
+    const second = fakeWatch()
+    const calls: Array<{ command: string; args: string[] }> = []
+    const watch: SpawnFn = (command, args) => {
+      calls.push({ command, args })
+      return (calls.length === 1 ? first : second).watch(command, args)
+    }
+    createNotifier({ spawn, watch, platform: "linux" }).send("t", "b")
+    first.emitError()
+    expect(calls.map((call) => call.command)).toEqual(["stdbuf", "gdbus"])
   })
 
   test("closes with gdbus when it succeeds", () => {

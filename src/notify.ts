@@ -118,23 +118,35 @@ function createLinuxNotifier(options: NotifierInput): Notifier {
     for (const id of ids) fire(id)
   }
 
+  function takeWatch(command: string, args: string[], onError?: () => void) {
+    try {
+      const child = watch(command, args, { encoding: "utf8" })
+      let dropped = false
+      child.stdout?.on("data", (chunk) => consume(String(chunk)))
+      child.on?.("error", () => {
+        if (dropped) return
+        dropped = true
+        if (onError) onError()
+        else watching = false
+      })
+      child.on?.("exit", () => {
+        if (dropped) return
+        watching = false
+      })
+      return true
+    } catch {
+      return false
+    }
+  }
+
   function ensureWatch() {
     if (watching) return
     watching = true
-    try {
-      const child = watch(
-        "stdbuf",
-        ["-oL", "gdbus", "monitor", "--session", "--dest", "org.freedesktop.Notifications"],
-        { encoding: "utf8" },
-      )
-      child.stdout?.on("data", (chunk) => consume(String(chunk)))
-      child.on?.("error", () => {})
-      child.on?.("exit", () => {
-        watching = false
-      })
-    } catch {
-      watching = false
+    const dest = ["monitor", "--session", "--dest", "org.freedesktop.Notifications"]
+    const takeGdbus = () => {
+      if (!takeWatch("gdbus", dest)) watching = false
     }
+    if (!takeWatch("stdbuf", ["-oL", "gdbus", ...dest], takeGdbus)) takeGdbus()
   }
 
   return {
@@ -194,6 +206,7 @@ function createLinuxNotifier(options: NotifierInput): Notifier {
     },
     close(id: number) {
       clicks.delete(id)
+      tokens.delete(id)
       const attempts: Array<[string, string[]]> = [
         [
           "gdbus",

@@ -2,12 +2,12 @@ import { describe, expect, test } from "bun:test"
 import { activate, expandClickCommand, zedFocusUrl, zedSocketCandidates } from "../src/activate"
 import type { SpawnSyncFn } from "../src/notify"
 
-type Call = { command: string; args: string[] }
+type Call = { command: string; args: string[]; env?: NodeJS.ProcessEnv }
 
 function fakeSpawn(handler: (command: string, args: string[]) => { status?: number | null; error?: Error; stdout?: string } = () => ({ status: 0 })) {
   const calls: Call[] = []
-  const spawn: SpawnSyncFn = (command, args) => {
-    calls.push({ command, args })
+  const spawn: SpawnSyncFn = (command, args, options) => {
+    calls.push({ command, args, ...(options?.env ? { env: options.env } : {}) })
     return handler(command, args)
   }
   return { spawn, calls }
@@ -63,7 +63,9 @@ describe("activate", () => {
       "/home/gab",
       { XDG_DATA_HOME: "/tmp/xdg", PATH: "/usr/bin" },
     )
-    expect(calls[0]).toEqual({ command: "zed", args: ["-e", "zed://"] })
+    expect(calls[0]?.command).toBe("zed")
+    expect(calls[0]?.args).toEqual(["-e", "zed://"])
+    expect(calls[0]?.env?.XDG_ACTIVATION_TOKEN).toBe("gnome-shell/1/token")
   })
 
   test("falls back to the zed CLI when no socket exists", () => {
