@@ -372,4 +372,157 @@ describe("createEngine", () => {
     expect(sent).toHaveLength(1)
     expect(closed).toEqual([])
   })
+
+  test("stays silent when a child session goes idle", () => {
+    const { engine, sent } = setup()
+    engine.handle({
+      type: "session.created",
+      properties: { info: { id: "ses_child", parentID: "ses_parent" } },
+    })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_child", status: { type: "busy" } } })
+    engine.handle({ type: "session.idle", properties: { sessionID: "ses_child" } })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_child", status: { type: "idle" } } })
+    expect(sent).toEqual([])
+  })
+
+  test("stays silent on a child session error", () => {
+    const { engine, sent } = setup()
+    engine.handle({
+      type: "session.created",
+      properties: { info: { id: "ses_child", parentID: "ses_parent" } },
+    })
+    engine.handle({
+      type: "session.error",
+      properties: { sessionID: "ses_child", error: { name: "UnknownError", data: { message: "boom" } } },
+    })
+    expect(sent).toEqual([])
+  })
+
+  test("stays silent on a child permission request", () => {
+    const { engine, sent, advance } = setup()
+    engine.handle({
+      type: "session.created",
+      properties: { info: { id: "ses_child", parentID: "ses_parent" } },
+    })
+    engine.handle({
+      type: "permission.asked",
+      properties: { id: "p1", permission: "bash", sessionID: "ses_child" },
+    })
+    advance(250)
+    expect(sent).toEqual([])
+  })
+
+  test("stays silent on a child question", () => {
+    const { engine, sent } = setup()
+    engine.handle({
+      type: "session.created",
+      properties: { info: { id: "ses_child", parentID: "ses_parent" } },
+    })
+    engine.handle({
+      type: "message.part.updated",
+      properties: {
+        part: {
+          type: "tool",
+          tool: "askuserquestion",
+          id: "q1",
+          sessionID: "ses_child",
+          state: { status: "pending" },
+          input: { questions: [{ question: "Ship it?" }] },
+        },
+      },
+    })
+    expect(sent).toEqual([])
+  })
+
+  test("still notifies when the parent session goes idle", () => {
+    const { engine, sent } = setup()
+    engine.handle({
+      type: "session.created",
+      properties: { info: { id: "ses_child", parentID: "ses_parent" } },
+    })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_child", status: { type: "busy" } } })
+    engine.handle({ type: "session.idle", properties: { sessionID: "ses_child" } })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_parent", status: { type: "busy" } } })
+    engine.handle({ type: "session.idle", properties: { sessionID: "ses_parent" } })
+    expect(sent).toEqual([{ title: "opencode idle", body: "demo: finished", urgency: "critical", sessionId: "ses_parent" }])
+  })
+
+  test("notifies a child session when notifySubagents is true", () => {
+    const { engine, sent } = setup({ notifySubagents: true })
+    engine.handle({
+      type: "session.created",
+      properties: { info: { id: "ses_child", parentID: "ses_parent" } },
+    })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_child", status: { type: "busy" } } })
+    engine.handle({ type: "session.idle", properties: { sessionID: "ses_child" } })
+    expect(sent).toEqual([{ title: "opencode idle", body: "demo: finished", urgency: "critical", sessionId: "ses_child" }])
+  })
+
+  test("notifies an unknown session (fail open)", () => {
+    const { engine, sent } = setup()
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_1", status: { type: "busy" } } })
+    engine.handle({ type: "session.idle", properties: { sessionID: "ses_1" } })
+    expect(sent).toEqual([{ title: "opencode idle", body: "demo: finished", urgency: "critical", sessionId: "ses_1" }])
+  })
+
+  test("learns a child session before idle and stays silent", () => {
+    const { engine, sent } = setup()
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_child", status: { type: "busy" } } })
+    engine.handle({
+      type: "session.created",
+      properties: { info: { id: "ses_child", parentID: "ses_parent" } },
+    })
+    engine.handle({ type: "session.idle", properties: { sessionID: "ses_child" } })
+    expect(sent).toEqual([])
+  })
+
+  test("tracks a child session from session.updated", () => {
+    const { engine, sent } = setup()
+    engine.handle({
+      type: "session.updated",
+      properties: { info: { id: "ses_child", parentID: "ses_parent" } },
+    })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_child", status: { type: "busy" } } })
+    engine.handle({ type: "session.idle", properties: { sessionID: "ses_child" } })
+    expect(sent).toEqual([])
+  })
+
+  test("does not start a turn from a child user message", () => {
+    const { engine, sent } = setup()
+    engine.handle({
+      type: "session.created",
+      properties: { info: { id: "ses_child", parentID: "ses_parent" } },
+    })
+    engine.handle({
+      type: "message.updated",
+      properties: { sessionID: "ses_child", info: { id: "msg_1", role: "user" } },
+    })
+    engine.handle({ type: "session.idle", properties: { sessionID: "ses_child" } })
+    expect(sent).toEqual([])
+  })
+
+  test("tracks a child session from the v2 created shape", () => {
+    const { engine, sent } = setup()
+    engine.handle({
+      type: "session.created",
+      properties: { sessionID: "ses_child", info: { id: "ses_child", parentID: "ses_parent" } },
+    })
+    engine.handle({ type: "session.status", properties: { sessionID: "ses_child", status: { type: "busy" } } })
+    engine.handle({ type: "session.idle", properties: { sessionID: "ses_child" } })
+    expect(sent).toEqual([])
+  })
+
+  test("stays silent when a child is learned before a request settles", () => {
+    const { engine, sent, advance } = setup()
+    engine.handle({
+      type: "permission.asked",
+      properties: { id: "p1", permission: "bash", sessionID: "ses_child" },
+    })
+    engine.handle({
+      type: "session.created",
+      properties: { info: { id: "ses_child", parentID: "ses_parent" } },
+    })
+    advance(250)
+    expect(sent).toEqual([])
+  })
 })

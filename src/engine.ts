@@ -47,6 +47,13 @@ export function createEngine(input: EngineInput): Engine {
   const suppressIdle = createTracked<true>()
   const idleNotified = createTracked<true>()
   const lastUser = createTracked<string>()
+  const children = createTracked<true>()
+
+  function hiddenChild(sessionId?: string) {
+    if (input.options.notifySubagents) return false
+    if (!sessionId) return false
+    return children.has(sessionId)
+  }
 
   function cancel(id: string) {
     const timer = pending.get(id)
@@ -72,6 +79,7 @@ export function createEngine(input: EngineInput): Engine {
 
   function markBusy(sessionId?: string) {
     if (!sessionId) return
+    if (hiddenChild(sessionId)) return
     if (idleNotified.has(sessionId) || suppressIdle.has(sessionId)) return
     active.set(sessionId, true)
   }
@@ -79,6 +87,7 @@ export function createEngine(input: EngineInput): Engine {
   function notifyIdle(sessionId?: string) {
     if (!sessionId || !active.has(sessionId)) return
     active.delete(sessionId)
+    if (hiddenChild(sessionId)) return
     if (suppressIdle.has(sessionId)) return
     if (!input.options.notifyIdle) return
     if (idleNotified.has(sessionId)) return
@@ -98,6 +107,7 @@ export function createEngine(input: EngineInput): Engine {
       setTimer(() => {
         pending.delete(id)
         if (replied.has(id)) return
+        if (hiddenChild(sessionId)) return
         remember(
           id,
           input.send("opencode request", `${input.projectName}: ${body}`.slice(0, 240), input.options.urgency, {
@@ -114,6 +124,27 @@ export function createEngine(input: EngineInput): Engine {
       const type = event.type
       const properties = event.properties ?? {}
 
+      if (type === "session.created" || type === "session.updated") {
+        const props = properties as { sessionID?: string; info?: { id?: string; parentID?: string } }
+        const id =
+          typeof props.info?.id === "string" && props.info.id
+            ? props.info.id
+            : sessionIdOf(props)
+        const parentID = props.info?.parentID
+        if (id && typeof parentID === "string" && parentID) children.set(id, true)
+        return
+      }
+
+      if (type === "session.deleted") {
+        const props = properties as { sessionID?: string; info?: { id?: string } }
+        const id =
+          typeof props.info?.id === "string" && props.info.id
+            ? props.info.id
+            : sessionIdOf(props)
+        if (id) children.delete(id)
+        return
+      }
+
       if (type === "permission.asked") {
         const props = properties as {
           id?: string
@@ -125,8 +156,10 @@ export function createEngine(input: EngineInput): Engine {
         }
         const id = requestIds(props)[0]
         if (!id) return
+        const sessionId = sessionIdOf(props)
+        if (hiddenChild(sessionId)) return
         const extra = props.patterns?.join(", ") ?? ""
-        queue(id, [props.permission ?? "permission", extra].filter(Boolean).join(" "), sessionIdOf(props))
+        queue(id, [props.permission ?? "permission", extra].filter(Boolean).join(" "), sessionId)
         return
       }
 
@@ -141,7 +174,9 @@ export function createEngine(input: EngineInput): Engine {
         }
         const id = requestIds(props)[0]
         if (!id) return
-        queue(id, [props.type ?? "permission", props.title ?? ""].filter(Boolean).join(" "), sessionIdOf(props))
+        const sessionId = sessionIdOf(props)
+        if (hiddenChild(sessionId)) return
+        queue(id, [props.type ?? "permission", props.title ?? ""].filter(Boolean).join(" "), sessionId)
         return
       }
 
@@ -161,6 +196,7 @@ export function createEngine(input: EngineInput): Engine {
           error?: { name?: string; data?: { message?: string; name?: string } }
         }
         const sessionId = sessionIdOf(props)
+        if (hiddenChild(sessionId)) return
         if (sessionId) suppressIdle.set(sessionId, true)
         if (isAbortedError(props.error)) return
         if (!input.options.notifyErrors) return
@@ -192,6 +228,7 @@ export function createEngine(input: EngineInput): Engine {
         const sessionId = sessionIdOf(props) ?? sessionIdOf(props.info ?? {})
         const id = props.info?.id
         if (!sessionId || props.info?.role !== "user" || !id) return
+        if (hiddenChild(sessionId)) return
         if (lastUser.get(sessionId) === id) return
         lastUser.set(sessionId, id)
         beginTurn(sessionId)
@@ -215,6 +252,7 @@ export function createEngine(input: EngineInput): Engine {
         if (part.tool?.toLowerCase() !== "askuserquestion") return
         if (part.state?.status !== "pending") return
         if (!input.options.notifyQuestions) return
+        if (hiddenChild(sessionIdOf(part))) return
         const id = part.id ?? "question"
         if (asked.has(id)) return
         asked.set(id, true)

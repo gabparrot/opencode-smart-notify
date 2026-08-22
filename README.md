@@ -18,6 +18,7 @@ Linux, macOS, and Windows. Use **0.1.1 or later** — 0.1.0 does not load.
 | Session error | `opencode error` |
 | Agent finished (`session.status` idle) | `opencode idle` |
 | ESC / `MessageAbortedError` | none |
+| Subagent / child-session events | none unless `notifySubagents` |
 
 A request popup already on screen is retracted when `permission.replied` arrives (Linux and Windows). macOS Notification Center cannot dismiss a posted banner from a script.
 
@@ -76,7 +77,8 @@ Do not copy only `src/index.ts` into `~/.config/opencode/plugins/` — the plugi
 3. If the timer fires, the request is still waiting on you, so a notification is sent.
 4. `MessageAbortedError` is ignored. It is not an `opencode error` popup.
 5. After a user message or `session.status` busy, `session.status` idle / `session.idle` sends `opencode idle`. ESC, a real error, or an idle with no prior turn stays silent. Title or background work does not retract that popup or send a second one. A new user message starts the next turn.
-6. Clicking a popup focuses Zed (`zed://`), using the GNOME/Wayland activation token when the compositor sends one. It does not open `zed://agent`, which would start a new thread.
+6. Child sessions (`Session.parentID` set) are skipped by default. Parent idle still notifies when the parent finishes.
+7. Clicking a popup focuses Zed (`zed://`), using the GNOME/Wayland activation token when the compositor sends one. It does not open `zed://agent`, which would start a new thread.
 
 That covers `opencode --auto`, the TUI auto-approve toggle, and any other path that replies before you need to look.
 
@@ -91,6 +93,7 @@ Optional `~/.config/opencode/opencode-smart-notify.json`. Plugin tuple options i
 | `notifyQuestions` | `true` | `askuserquestion` |
 | `notifyErrors` | `true` | Session errors (not cancel) |
 | `notifyIdle` | `true` | Agent finished (`session.status` idle) |
+| `notifySubagents` | `false` | Task / child-session events |
 | `urgency` | `"critical"` | `low`, `normal`, or `critical` |
 | `clickCommand` | *(auto)* | Argv run on click. `{sessionId}` is substituted. Default: focus Zed (`zed://`) |
 

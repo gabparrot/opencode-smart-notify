@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Skip child / subagent session notifications by default; `notifySubagents: true` restores them
 - Notify when an agent finishes (`session.status` idle / `session.idle` → `opencode idle`)
 - Stay silent on idle after ESC / `MessageAbortedError`, a real error, or an idle with no prior busy turn
 - Do not retract or re-send an idle popup when title or background work sets the session busy
