@@ -13,6 +13,7 @@ export type Options = {
   notifyQuestions: boolean
   notifyErrors: boolean
   notifyIdle: boolean
+  notifySubagents: boolean
   urgency: Urgency
   clickCommand?: string[]
 }
@@ -23,6 +24,7 @@ export const defaults: Options = {
   notifyQuestions: true,
   notifyErrors: true,
   notifyIdle: true,
+  notifySubagents: false,
   urgency: "critical",
 }
 
@@ -41,6 +43,7 @@ export function parseOptions(raw: unknown): Partial<Options> {
   if (typeof o.notifyQuestions === "boolean") out.notifyQuestions = o.notifyQuestions
   if (typeof o.notifyErrors === "boolean") out.notifyErrors = o.notifyErrors
   if (typeof o.notifyIdle === "boolean") out.notifyIdle = o.notifyIdle
+  if (typeof o.notifySubagents === "boolean") out.notifySubagents = o.notifySubagents
   if (typeof o.urgency === "string" && (URGENCIES as readonly string[]).includes(o.urgency)) {
     out.urgency = o.urgency as Urgency
   }

@@ -46,7 +46,7 @@ Parity with what people expect from a notify plugin, still Linux-only.
 - [x] Session done / idle notification (the “look back” signal)
 - [ ] Optional suppress-when-focused (fail open if focus cannot be detected)
 - [ ] Close an already-shown notification when the OpenCode terminal becomes focused or the prompt is no longer waiting
-- [ ] Skip or separately gate subagent / child-session events
+- [x] Skip or separately gate subagent / child-session events
 - [ ] Sanitize notification bodies (truncate, strip likely secrets) so lock-screen / notification history leak less
 - [ ] Use `spawn` instead of `spawnSync` so the event hook does not block
 - [ ] Stop marking every event `critical`; map urgency per event type

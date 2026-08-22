@@ -31,13 +31,16 @@ describe("parseOptions", () => {
         notifyQuestions: false,
         notifyErrors: false,
         notifyIdle: false,
+        notifySubagents: true,
       }),
     ).toEqual({
       notifyRequests: false,
       notifyQuestions: false,
       notifyErrors: false,
       notifyIdle: false,
+      notifySubagents: true,
     })
+    expect(parseOptions({ notifySubagents: false })).toEqual({ notifySubagents: false })
   })
 
   test("ignores invalid notify flags and urgency", () => {
@@ -47,6 +50,7 @@ describe("parseOptions", () => {
         notifyQuestions: 1,
         notifyErrors: null,
         notifyIdle: "false",
+        notifySubagents: "yes",
         urgency: "urgent",
       }),
     ).toEqual({})
@@ -107,6 +111,7 @@ describe("defaults", () => {
       notifyQuestions: true,
       notifyErrors: true,
       notifyIdle: true,
+      notifySubagents: false,
       urgency: "critical",
     })
   })
