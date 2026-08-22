@@ -34,7 +34,7 @@ Add the plugin to `~/.config/opencode/opencode.json` or `opencode.jsonc`:
 
 ```jsonc
 {
-  "plugin": ["opencode-smart-notify@0.2.0"]
+  "plugin": ["opencode-smart-notify@0.3.0"]
 }
 ```
 
@@ -44,7 +44,7 @@ With options:
 
 ```jsonc
 {
-  "plugin": [["opencode-smart-notify@0.2.0", { "notifyErrors": false }]]
+  "plugin": [["opencode-smart-notify@0.3.0", { "notifyErrors": false }]]
 }
 ```
 
@@ -56,7 +56,7 @@ Do not run this alongside `opencode-notify` or you will get duplicate popups.
 
 ```jsonc
 {
-  "plugin": ["github:gabparrot/opencode-smart-notify#v0.2.0"]
+  "plugin": ["github:gabparrot/opencode-smart-notify#v0.3.0"]
 }
 ```
 
@@ -99,7 +99,7 @@ Optional `~/.config/opencode/opencode-smart-notify.json`. Plugin tuple options i
 
 ```jsonc
 {
-  "plugin": [["opencode-smart-notify@0.2.0", { "notifyErrors": false }]]
+  "plugin": [["opencode-smart-notify@0.3.0", { "notifyErrors": false }]]
 }
 ```
 
